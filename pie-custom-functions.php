@@ -1,11 +1,11 @@
-<?php 
+<?php
 
 /**
  * Plugin Name: Pie Custom Functions
  * Description: Custom functions for Pie Hosting
  * Author: Pie Hosting
  * Author URI: https://pie.co.de
- * Version: 1.0.0
+ * Version: 2.0.0
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: pie-custom-functions
@@ -16,12 +16,117 @@
 namespace PieCustomFunctions;
 
 // Exit if accessed directly.
-if ( ! defined( 'ABSPATH' ) ) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
 // Add custom user role for Pie Admin
-add_role('pie_admin', 'Pie Admin', get_role( 'administrator' )->capabilities );
+function add_pie_admin_role()
+{
+    remove_role('pie_admin');
+    add_role('pie_admin', 'Pie Admin', get_role('administrator')->capabilities);
+}
+// Hook the function into the 'init' action with a lower priority
+add_action('init', __NAMESPACE__ . '\add_pie_admin_role', 10);
+
+
+
+
+// Add a custom meta box to the user profile page
+add_action('admin_init', __NAMESPACE__ . '\custom_user_profile_meta_box');
+
+function custom_user_profile_meta_box()
+{
+    add_action('show_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback');
+    add_action('edit_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback');
+}
+
+// Meta box content
+function custom_user_role_meta_box_callback($user)
+{
+    $selected_role = get_user_meta($user->ID, 'custom_user_role', true);
+
+    echo '<h3>Custom User Role</h3>';
+    echo '<table class="form-table"><tr>';
+    echo '<th><label for="custom_user_role">Select Custom User Role:</label></th>';
+    echo '<td><select name="custom_user_role" id="custom_user_role">';
+
+    $selected = selected($selected_role, 'pie_admin', false);
+    echo "<option value='' $selected>Select Role</option>";
+    echo "<option value='pie_admin' $selected>Pie Admin</option>";
+
+    echo '</select></td></tr></table>';
+}
+
+// Save the selected custom role when the user profile is updated
+add_action('personal_options_update', __NAMESPACE__ . '\custom_save_user_role');
+add_action('edit_user_profile_update', __NAMESPACE__ . '\custom_save_user_role');
+
+function custom_save_user_role($user_id)
+{
+    if (current_user_can('edit_user', $user_id)) {
+        $selected_role = sanitize_key($_POST['custom_user_role']);
+        update_user_meta($user_id, 'custom_user_role', $selected_role);
+    }
+}
+
+// Set the custom role after the user has been saved
+add_action('profile_update', __NAMESPACE__ . '\custom_set_user_role',);
+
+function custom_set_user_role($user_id)
+{
+    $selected_role = get_user_meta($user_id, 'custom_user_role', true);
+
+    if ($selected_role) {
+        $user = get_userdata($user_id);
+        $user->add_role($selected_role);
+    }
+
+    $user = get_userdata($user_id);
+}
+
+
+/**
+ * Add the 'Pie Admin' role to any user that registers with an email address ending in '@pie.co.de'
+ * 
+ * @param int $user_id
+ * @return void
+ */
+
+add_action('user_register', __NAMESPACE__ . '\add_pie_admin_role_to_user');
+
+function add_pie_admin_role_to_user($user_id)
+{
+    $user = get_userdata($user_id);
+    $email = $user->user_email;
+    $email = explode('@', $email);
+    $email = $email[1];
+    if ($email == 'pie.co.de') {
+        $user->add_role('pie_admin');
+    }
+}
+
+/**
+ * Add the 'Pie Admin' role to any existing user that has an email address ending in '@pie.co.de'
+ * 
+ * @return void
+ */
+
+add_action( 'admin_init', __NAMESPACE__ . '\add_pie_admin_role_to_existing_users' );
+
+function add_pie_admin_role_to_existing_users()
+{
+    $users = get_users();
+
+    foreach ($users as $user) {
+        $email = $user->user_email;
+        $email = explode('@', $email);
+        $email = $email[1];
+        if ($email == 'pie.co.de') {
+            $user->add_role('pie_admin');
+        }
+    }
+}
 
 
 /**
@@ -32,12 +137,16 @@ add_role('pie_admin', 'Pie Admin', get_role( 'administrator' )->capabilities );
  */
 
 add_filter('all_plugins', __NAMESPACE__ . '\hide_plugins');
-function hide_plugins($plugins){
-    if(!current_user_can('pie_admin')){
-        if(isset($plugins['ultimate-branding/ultimate-branding.php'])){
+function hide_plugins($plugins)
+{
+    $current_user = wp_get_current_user();
+
+
+    if (!in_array('pie_admin', $current_user->roles)) {
+        if (isset($plugins['ultimate-branding/ultimate-branding.php'])) {
             unset($plugins['ultimate-branding/ultimate-branding.php']);
         }
-        if(isset($plugins['pie-custom-functions/pie-custom-functions.php'])){
+        if (isset($plugins['pie-custom-functions/pie-custom-functions.php'])) {
             unset($plugins['pie-custom-functions/pie-custom-functions.php']);
         }
     }
@@ -50,8 +159,12 @@ function hide_plugins($plugins){
  * @return void
  */
 add_action('admin_menu', __NAMESPACE__ . '\hide_plugins_from_side_bar');
-function hide_plugins_from_side_bar(){
-    if(!current_user_can('pie_admin')){
+add_action('network_admin_menu', __NAMESPACE__ . '\hide_plugins_from_side_bar');
+function hide_plugins_from_side_bar()
+{
+    $current_user = wp_get_current_user();
+
+    if (!in_array('pie_admin', $current_user->roles)) {
         add_filter('branda_permissions_allowed_roles', '__return_empty_array');
         remove_menu_page('edit.php?post_type=admin_panel_tip');
     }
@@ -65,14 +178,18 @@ function hide_plugins_from_side_bar(){
  */
 
 
-$users = get_users();
+    $users = get_users();
 
-foreach ($users as $user) {
-    if (in_array('pie_admin', $user->roles)) {
-        $pie_admins[] = $user;
+    foreach ($users as $user) {
+        if (in_array('pie_admin', $user->roles)) {
+            $pie_admins[] = $user;
+        }
+    }   
+        
+    $pie_admins = wp_list_pluck( $pie_admins, 'ID' );
+
+
+    if (!empty($pie_admins)) {
+        define('WPMUDEV_LIMIT_TO_USER', implode(',', $pie_admins));
     }
-}
 
-$pie_admins = wp_list_pluck( $pie_admins, 'ID' );
-
-define( 'WPMUDEV_LIMIT_TO_USER', $pie_admins );
