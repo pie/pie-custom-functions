@@ -41,7 +41,13 @@ function custom_user_profile_meta_box()
     add_action('edit_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback');
 }
 
-// Meta box content
+/**
+ * Display the custom meta box on the user profile page
+ * This box is only to be shown on Multisite as a user must be a super admin witht the 'pie_admin' role added as an additional role
+ *
+ * @param [type] $user
+ * @return void
+ */
 function custom_user_role_meta_box_callback($user)
 {
     $selected_role = get_user_meta($user->ID, 'custom_user_role', true);
@@ -76,7 +82,8 @@ add_action('profile_update', __NAMESPACE__ . '\custom_set_user_role',);
 function custom_set_user_role($user_id)
 {
     $selected_role = get_user_meta($user_id, 'custom_user_role', true);
-
+ 
+  
     if ($selected_role) {
         $user = get_userdata($user_id);
         $user->add_role($selected_role);
@@ -98,6 +105,39 @@ add_action('user_register', __NAMESPACE__ . '\add_pie_admin_role_to_user');
 function add_pie_admin_role_to_user($user_id)
 {
     $user = get_userdata($user_id);
+    assign_pie_admin_to_user($user);
+}
+
+/**
+ * Add the 'Pie Admin' role to any existing user that has an email address ending in '@pie.co.de'
+ * This function runs when the plugin is activated
+ * 
+ * @return void
+ */
+
+add_action( 'register_activation_hook', __NAMESPACE__ . '\add_pie_admin_role_to_existing_users' );
+
+function add_pie_admin_role_to_existing_users()
+{
+    $users = get_users(array(
+        'search' => '*@pie.co.de',
+        'search_columns' => array('user_email'),
+    ));
+
+    foreach ($users as $user) {
+        assign_pie_admin_to_user($user);
+    }
+}
+
+/**
+ * Get the current users email address
+ * 
+ * @param object $user
+ * @return string $email
+ */
+
+function assign_pie_admin_to_user($user)
+{
     $email = $user->user_email;
     $email = explode('@', $email);
     $email = $email[1];
@@ -105,29 +145,6 @@ function add_pie_admin_role_to_user($user_id)
         $user->add_role('pie_admin');
     }
 }
-
-/**
- * Add the 'Pie Admin' role to any existing user that has an email address ending in '@pie.co.de'
- * 
- * @return void
- */
-
-add_action( 'admin_init', __NAMESPACE__ . '\add_pie_admin_role_to_existing_users' );
-
-function add_pie_admin_role_to_existing_users()
-{
-    $users = get_users();
-
-    foreach ($users as $user) {
-        $email = $user->user_email;
-        $email = explode('@', $email);
-        $email = $email[1];
-        if ($email == 'pie.co.de') {
-            $user->add_role('pie_admin');
-        }
-    }
-}
-
 
 /**
  * Remove the 'Brand Pro' and 'Pie Custom Functions' plugins from the plugins page for all users except Pie Admin
@@ -178,15 +195,11 @@ function hide_plugins_from_side_bar()
  */
 
 
-    $users = get_users();
-
-    foreach ($users as $user) {
-        if (in_array('pie_admin', $user->roles)) {
-            $pie_admins[] = $user;
-        }
-    }   
+    $users = get_users(array(
+        'role' => 'pie_admin'
+    ));
         
-    $pie_admins = wp_list_pluck( $pie_admins, 'ID' );
+    $pie_admins = wp_list_pluck( $users, 'ID' );
 
 
     if (!empty($pie_admins)) {
