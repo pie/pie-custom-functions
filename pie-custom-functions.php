@@ -29,69 +29,74 @@ function add_pie_admin_role()
 // Hook the function into the 'init' action with a lower priority
 add_action('init', __NAMESPACE__ . '\add_pie_admin_role', 10);
 
-
-
-
-// Add a custom meta box to the user profile page
-add_action('admin_init', __NAMESPACE__ . '\custom_user_profile_meta_box');
-
-function custom_user_profile_meta_box()
-{
-    add_action('show_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback');
-    add_action('edit_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback');
-}
-
 /**
- * Display the custom meta box on the user profile page
+ * Add a meta box to the user profile page to allow the user to select a custom role
  * This box is only to be shown on Multisite as a user must be a super admin witht the 'pie_admin' role added as an additional role
- *
- * @param [type] $user
+ * 
  * @return void
  */
-function custom_user_role_meta_box_callback($user)
-{
-    $selected_role = get_user_meta($user->ID, 'custom_user_role', true);
+if (is_multisite()) {
 
-    echo '<h3>Custom User Role</h3>';
-    echo '<table class="form-table"><tr>';
-    echo '<th><label for="custom_user_role">Select Custom User Role:</label></th>';
-    echo '<td><select name="custom_user_role" id="custom_user_role">';
+    // Add a custom meta box to the user profile page
+    add_action('admin_init', __NAMESPACE__ . '\custom_user_profile_meta_box');
 
-    $selected = selected($selected_role, 'pie_admin', false);
-    echo "<option value='' $selected>Select Role</option>";
-    echo "<option value='pie_admin' $selected>Pie Admin</option>";
-
-    echo '</select></td></tr></table>';
-}
-
-// Save the selected custom role when the user profile is updated
-add_action('personal_options_update', __NAMESPACE__ . '\custom_save_user_role');
-add_action('edit_user_profile_update', __NAMESPACE__ . '\custom_save_user_role');
-
-function custom_save_user_role($user_id)
-{
-    if (current_user_can('edit_user', $user_id)) {
-        $selected_role = sanitize_key($_POST['custom_user_role']);
-        update_user_meta($user_id, 'custom_user_role', $selected_role);
+    function custom_user_profile_meta_box()
+    {
+        add_action('show_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback');
+        add_action('edit_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback');
     }
-}
 
-// Set the custom role after the user has been saved
-add_action('profile_update', __NAMESPACE__ . '\custom_set_user_role',);
+    /**
+     * Display the custom meta box on the user profile page
+     *
+     * @param [type] $user
+     * @return void
+     */
+    function custom_user_role_meta_box_callback($user)
+    {
+        $selected_role = get_user_meta($user->ID, 'custom_user_role', true);
 
-function custom_set_user_role($user_id)
-{
-    $selected_role = get_user_meta($user_id, 'custom_user_role', true);
- 
-  
-    if ($selected_role) {
+        echo '<h3>Custom User Role</h3>';
+        echo '<table class="form-table"><tr>';
+        echo '<th><label for="custom_user_role">Select Custom User Role:</label></th>';
+        echo '<td><select name="custom_user_role" id="custom_user_role">';
+
+        $selected = selected($selected_role, 'pie_admin', false);
+        echo "<option value='' $selected>Select Role</option>";
+        echo "<option value='pie_admin' $selected>Pie Admin</option>";
+
+        echo '</select></td></tr></table>';
+    }
+
+    // Save the selected custom role when the user profile is updated
+    add_action('personal_options_update', __NAMESPACE__ . '\custom_save_user_role');
+    add_action('edit_user_profile_update', __NAMESPACE__ . '\custom_save_user_role');
+
+    function custom_save_user_role($user_id)
+    {
+        if (current_user_can('edit_user', $user_id)) {
+            $selected_role = sanitize_key($_POST['custom_user_role']);
+            update_user_meta($user_id, 'custom_user_role', $selected_role);
+        }
+    }
+
+    // Set the custom role after the user has been saved
+    add_action('profile_update', __NAMESPACE__ . '\custom_set_user_role',);
+
+    function custom_set_user_role($user_id)
+    {
+        $selected_role = get_user_meta($user_id, 'custom_user_role', true);
+    
+    
+        if ($selected_role) {
+            $user = get_userdata($user_id);
+            $user->add_role($selected_role);
+        }
+
         $user = get_userdata($user_id);
-        $user->add_role($selected_role);
     }
 
-    $user = get_userdata($user_id);
 }
-
 
 /**
  * Add the 'Pie Admin' role to any user that registers with an email address ending in '@pie.co.de'
@@ -184,6 +189,7 @@ function hide_plugins_from_side_bar()
     if (!in_array('pie_admin', $current_user->roles)) {
         add_filter('branda_permissions_allowed_roles', '__return_empty_array');
         remove_menu_page('edit.php?post_type=admin_panel_tip');
+        remove_menu_page( 'wpmudev-videos' );
     }
 }
 
