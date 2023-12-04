@@ -20,6 +20,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+function pie_custom_functions_init(){
+    add_pie_admin_role_to_existing_users();
+}
+
+register_activation_hook(__FILE__ , __NAMESPACE__ . '\pie_custom_functions_init');
+
 // Add custom user role for Pie Admin
 function add_pie_admin_role()
 {
@@ -86,8 +92,8 @@ if (is_multisite()) {
     function custom_set_user_role($user_id)
     {
         $selected_role = get_user_meta($user_id, 'custom_user_role', true);
-    
-    
+
+
         if ($selected_role) {
             $user = get_userdata($user_id);
             $user->add_role($selected_role);
@@ -95,7 +101,6 @@ if (is_multisite()) {
 
         $user = get_userdata($user_id);
     }
-
 }
 
 /**
@@ -120,10 +125,11 @@ function add_pie_admin_role_to_user($user_id)
  * @return void
  */
 
-add_action( 'register_activation_hook', __NAMESPACE__ . '\add_pie_admin_role_to_existing_users' );
+
 
 function add_pie_admin_role_to_existing_users()
 {
+
     $users = get_users(array(
         'search' => '*@pie.co.de',
         'search_columns' => array('user_email'),
@@ -189,7 +195,7 @@ function hide_plugins_from_side_bar()
     if (!in_array('pie_admin', $current_user->roles)) {
         add_filter('branda_permissions_allowed_roles', '__return_empty_array');
         remove_menu_page('edit.php?post_type=admin_panel_tip');
-        remove_menu_page( 'wpmudev-videos' );
+        remove_menu_page('wpmudev-videos');
     }
 }
 
@@ -201,14 +207,13 @@ function hide_plugins_from_side_bar()
  */
 
 
-    $users = get_users(array(
-        'role' => 'pie_admin'
-    ));
-        
-    $pie_admins = wp_list_pluck( $users, 'ID' );
+$users = get_users(array(
+    'role' => 'pie_admin'
+));
+
+$pie_admins = wp_list_pluck($users, 'ID');
 
 
-    if (!empty($pie_admins)) {
-        define('WPMUDEV_LIMIT_TO_USER', implode(',', $pie_admins));
-    }
-
+if (!empty($pie_admins)) {
+    define('WPMUDEV_LIMIT_TO_USER', implode(',', $pie_admins));
+}
