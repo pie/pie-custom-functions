@@ -1,0 +1,15 @@
+{
+    "name": "pie/plugin_template",
+    "description": "This plugin doesn't do anything, but gives you a very minimal starting template.",
+    "type": "wordpress-plugin",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "The team at PIE",
+            "email": "dev@pie.co.de"
+        }
+    ],
+    "require": {
+        "yahnis-elsts/plugin-update-checker": "^5.1"
+    }
+}

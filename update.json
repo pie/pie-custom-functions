@@ -1,0 +1,8 @@
+{
+    "name": "Pie Plugin Template",
+    "version": "0.0.1",
+    "download_url": "https://github.com/pie/plugin_template/releases/download/0.0.1/update.zip",
+    "sections": {
+        "description" : "This plugin doesn't do anything, but gives you a very minimal starting template."
+    }
+}
