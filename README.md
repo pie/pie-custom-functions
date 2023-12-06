@@ -1,12 +1,4 @@
 # Pie Custom Functions
-Just a starter template for basic WordPress plugins. Please create a new repo from this template and make the relevant edits to reflect your plugin. If you can improve this plugin template, then please feel free to raise an improvement idea on Slack for discussion.
-
-Steps to get up and running with integrated updates:
-
-1. Create a repository from this template and note your repository slug
-1. Clone to your local machine, cd into the directory and run `./init.sh`
-1. Start coding!
-
 Deploying updates:
 
 This plugin template is set up to work with integrated WordPress updates through the use of
