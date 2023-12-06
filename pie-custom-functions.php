@@ -43,7 +43,11 @@ function pie_custom_functions_init(){
     $mu_plugin_content = file_get_contents(plugin_dir_path(__FILE__) . 'pie_mu_custom_functions.php');
 
     // Set the path for the MU plugin file
-    $mu_plugin_path = WPMU_PLUGIN_DIR . '/pie_mu_custom_functions.php';
+
+    if(defined('WPMU_PLUGIN_DIR')){
+        $mu_plugin_path = WPMU_PLUGIN_DIR . '/pie_mu_custom_functions.php';
+    }
+
 
     // Check if the MU plugin file already exists
     if (!file_exists($mu_plugin_path)) {
