@@ -58,7 +58,8 @@ function pie_custom_functions_init(){
     rename($local_mu_plugin_file, $mu_plugin_destination_file);
 }
 
-add_action('plugins_loaded', __NAMESPACE__ . '\update_check')
+add_action('plugins_loaded', __NAMESPACE__ . '\update_check');
+
 function update_check(){
     
     if(!function_exists('get_plugin_data')){
