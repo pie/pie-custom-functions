@@ -1,7 +1,7 @@
 {
     "name": "Pie Custom Functions",
-    "version": "1.0.7",
-    "download_url": "https://github.com/pie/pie-custom-functions/releases/download/1.0.7/update-package.zip",
+    "version": "1.0.8",
+    "download_url": "https://github.com/pie/pie-custom-functions/releases/download/1.0.8/update-package.zip",
     "sections": {
         "description" : "Custom functions for Pie Hosting"
     }
