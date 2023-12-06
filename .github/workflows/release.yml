@@ -70,10 +70,10 @@ jobs:
       # because reasons so we create them separately.      
       - name: Build required zip artifacts
         run: |
-          zip -r -q ~/pie-custom-functions.zip ./ -x ".git/*" ".github/*" "composer.*" "package.json" "update.json" "DOCKER_ENV" "docker_tag" "*.log"
+          zip -r -q ~/plugin-install.zip ./ -x ".git/*" ".github/*" "composer.*" "package.json" "update.json" "DOCKER_ENV" "docker_tag" "*.log"
           mkdir -p ./update-package/pie-custom-functions
           unzip ~/pie-custom-functions.zip -d ./update-package/pie-custom-functions
-          zip -r -q ~/update-package.zip ./update-package
+          zip -r -q ~/update-package.zip ./update-package/pie-custom-functions
       
       - name: Create a GitHub release
         uses: ncipollo/release-action@v1
