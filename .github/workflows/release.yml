@@ -57,7 +57,7 @@ jobs:
           sed -i "s/version\":\ \"[0-9]\+\.\?[0-9]*\.\?[0-9]*/version\":\ \"${{ needs.check_for_release.outputs.version }}/g" ./package.json
           sed -i "s/version\":\ \"[0-9]\+\.\?[0-9]*\.\?[0-9]*/version\":\ \"${{ needs.check_for_release.outputs.version }}/g" ./update.json
           sed -i "s/download\/[0-9]\+\.\?[0-9]*\.\?[0-9]*/download\/${{ needs.check_for_release.outputs.version }}/g" ./update.json
-          sed -i "s/Version:\ [0-9]\+\.\?[0-9]*\.\?[0-9]*/Version:\ ${{ needs.check_for_release.outputs.version }}/g" ./plugin.php
+          sed -i "s/Version:\ [0-9]\+\.\?[0-9]*\.\?[0-9]*/Version:\ ${{ needs.check_for_release.outputs.version }}/g" ./${{ github.event.repository.name }}.php
           sed -i "s/\[Unreleased\]/\[Unreleased\]\r\n\r\n## \[${{ needs.check_for_release.outputs.version }}\] ${{steps.get_date.outputs.date}} /g" ./changelog.md
           git config user.name "Github Actions"
           git config user.email "<>"
@@ -70,10 +70,8 @@ jobs:
       # because reasons so we create them separately.      
       - name: Build required zip artifacts
         run: |
-          zip -r -q ~/pie-custom-functions.zip ./ -x ".git/*" ".github/*" "composer.*" "package.json" "update.json" "DOCKER_ENV" "docker_tag" "*.log"
-          mkdir -p ./update-package/pie-custom-functions
-          unzip ~/pie-custom-functions.zip -d ./update-package/pie-custom-functions
-          zip -r -q ~/update-package.zip ./update-package/pie-custom-functions
+          cd ../
+          zip -r -q ~/${{ github.event.repository.name }}.zip ./${{ github.event.repository.name }} -x ".git/*" ".github/*" "composer.*" "package.json" "update.json" "DOCKER_ENV" "docker_tag" "*.log"
       
       - name: Create a GitHub release
         uses: ncipollo/release-action@v1
@@ -82,4 +80,4 @@ jobs:
           name: ${{ needs.check_for_release.outputs.version }}
           body: ${{ needs.check_for_release.outputs.release_body }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "~/pie-custom-functions.zip,~/update-package.zip" 
+          artifacts: "~/${{ github.event.repository.name }}.zip" 
