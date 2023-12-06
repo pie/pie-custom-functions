@@ -22,10 +22,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Load Composer autoloader
- */
+register_activation_hook(__FILE__ , __NAMESPACE__ . '\pie_custom_functions_init');
 add_action('plugins_loaded', __NAMESPACE__ . '\pie_custom_functions_load_composer');
+add_action('plugins_loaded', __NAMESPACE__ . '\update_check');
 
 /**
  * Load Composer autoloader
@@ -42,7 +41,6 @@ function pie_custom_functions_load_composer(){
     );
 }
 
-register_activation_hook(__FILE__ , __NAMESPACE__ . '\pie_custom_functions_init');
 
 /**
  * This function handles copying the MU plugin file to the correct location and updating the version number
@@ -76,9 +74,6 @@ function pie_custom_functions_init(){
  * 
  * @return void
  */
-
-add_action('plugins_loaded', __NAMESPACE__ . '\update_check');
-
 function update_check(){
     
     if(!function_exists('get_plugin_data')){
