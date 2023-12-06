@@ -39,21 +39,18 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   
     steps:
-      # Pretty obvious what this does
       - name: Check out the repo
         uses: actions/checkout@v3
-      # This action is used to install composer dependencies.
+      
       - name: Install Composer dependencies
         uses: php-actions/composer@v6
         with:
           dev: no
-      # This step is used to get the current date, which we are going to use in the changelog
+  
       - name: Get current date
         id: get_date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      # This step runs through the files in the plugin and updates all of the relevant version numbers
-      # with the number of this release. It also updates the changelog with the current date and then 
-      # commits the changes back to the main branch to the repo. 
+      
       - name: Bump the version numbers
         run: |
           echo "Creating release version ${{ needs.check_for_release.outputs.version }}"
@@ -67,17 +64,11 @@ jobs:
           git add .
           git commit -am "Version Numbering"
           git push
-      # This step creates a zip of the plugin which can be used for installation, and then creates a zip 
-      # of the plugin which can be used by the updater directory. These two need a different file structure
-      # so we create them separately.
-      - name: Build required zip artifacts
+      
+      - name: Build a zip of the plugin
         run: |
-          zip -r -q ~/pie-custom-functions.zip ./ -x ".git/*" ".github/*" "composer.*" "package.json" "update.json" "DOCKER_ENV" "docker_tag" "*.log"
-          mkdir -p ./update/pie-custom-functions
-          unzip ~/pie-custom-functions.zip -d ./update/pie-custom-functions
-          zip -r -q ~/update.zip ./update
-      # Finally we create a release in Github, and add the two zip files as artifacts. These can then be
-      # downloaded by users of the plugin.   
+          zip -r -q ~/invision-community-single-logout.zip ./ -x ".git/*" ".github/*" "composer.*" "package.json" "update.json" "DOCKER_ENV" "docker_tag" "*.log"
+          
       - name: Create a GitHub release
         uses: ncipollo/release-action@v1
         with:
@@ -85,4 +76,4 @@ jobs:
           name: ${{ needs.check_for_release.outputs.version }}
           body: ${{ needs.check_for_release.outputs.release_body }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "~/pie-custom-functions.zip,~/update.zip" 
+          artifacts: "~/invision-community-single-logout.zip" 
