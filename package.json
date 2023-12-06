@@ -1,9 +1,9 @@
 {
-  "name": "plugin_template",
+  "name": "pie-custom-functions",
   "version": "0.0.1",
-  "description": "This plugin doesn't do anything, but gives you a very minimal starting template.",
+  "description": "Custom functions for Pie Hosting",
   "main": "plugin.php",
-  "repository": "git@github.com:pie/plugin_template.git",
+  "repository": "git@github.com:pie/pie-custom-functions.git",
   "author": "The team at PIE <dev@pie.co.de>",
   "license": "GPL",
   "private": false
