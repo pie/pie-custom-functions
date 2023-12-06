@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Plugin Name: Pie Custom Functions
  * Description: Custom functions for Pie Hosting
@@ -87,3 +86,4 @@ function update_check(){
         pie_custom_functions_init();
     }
 }
+
