@@ -26,6 +26,12 @@ if (!defined('ABSPATH')) {
  * Load Composer autoloader
  */
 add_action('plugins_loaded', __NAMESPACE__ . '\pie_custom_functions_load_composer');
+
+/**
+ * Load Composer autoloader
+ *
+ * @return void
+ */
 function pie_custom_functions_load_composer(){
     require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 
