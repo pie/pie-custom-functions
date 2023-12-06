@@ -64,11 +64,17 @@ jobs:
           git add .
           git commit -am "Version Numbering"
           git push
-      
-      - name: Build a zip of the plugin
+
+      # This step creates a zip of the plugin which can be used for installation, and then creates a zip 
+      # of the plugin which can be used by the plugin updater. These twothings need different file structures
+      # because reasons so we create them separately.      
+      - name: Build required zip artifacts
         run: |
           zip -r -q ~/pie-custom-functions.zip ./ -x ".git/*" ".github/*" "composer.*" "package.json" "update.json" "DOCKER_ENV" "docker_tag" "*.log"
-          
+          mkdir -p ./update-package/pie-custom-functions
+          unzip ~/pie-custom-functions.zip -d ./update/pie-custom-functions
+          zip -r -q ~/update-package.zip ./update-package
+      
       - name: Create a GitHub release
         uses: ncipollo/release-action@v1
         with:
@@ -76,4 +82,4 @@ jobs:
           name: ${{ needs.check_for_release.outputs.version }}
           body: ${{ needs.check_for_release.outputs.release_body }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "~/pie-custom-functions.zip" 
+          artifacts: "~/pie-custom-functions.zip,~/update-package.zip" 
