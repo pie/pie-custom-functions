@@ -22,6 +22,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Hookups
 register_activation_hook(__FILE__ , __NAMESPACE__ . '\pie_custom_functions_init');
 add_action('plugins_loaded', __NAMESPACE__ . '\pie_custom_functions_load_composer');
 add_action('plugins_loaded', __NAMESPACE__ . '\update_check');
