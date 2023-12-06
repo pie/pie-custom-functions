@@ -1,0 +1,10 @@
+{
+  "name": "pie-custom-functions",
+  "version": "0.0.1",
+  "description": "Custom functions for Pie Hosting",
+  "main": "plugin.php",
+  "repository": "git@github.com:pie/pie-custom-functions.git",
+  "author": "The team at PIE <dev@pie.co.de>",
+  "license": "GPL",
+  "private": false
+}

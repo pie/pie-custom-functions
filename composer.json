@@ -1,0 +1,15 @@
+{
+    "name": "pie/pie-custom-functions",
+    "description": "Custom functions for Pie Hosting",
+    "type": "wordpress-plugin",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "The team at PIE",
+            "email": "dev@pie.co.de"
+        }
+    ],
+    "require": {
+        "yahnis-elsts/plugin-update-checker": "^5.1"
+    }
+}

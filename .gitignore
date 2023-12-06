@@ -1,0 +1,8 @@
+/vendor/
+/node_modules/
+yarn.lock
+composer.lock
+package-lock.json
+DOCKER_ENV
+docker_tag
+*.log

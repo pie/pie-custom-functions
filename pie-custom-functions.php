@@ -13,12 +13,25 @@
  *  
  */
 
-namespace PieCustomFunctions;
+namespace PIE\CustomFunctions;
 
 // Exit if accessed directly.
 if (!defined('ABSPATH')) {
     exit;
 }
+
+/**
+ * Load Composer autoloader
+ */
+require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
+
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
+$update_checker = PucFactory::buildUpdateChecker(
+    'https://pie.github.io/pie-custom-functions/update.json',
+    __FILE__,
+    'pie-custom-functions'
+);
 
 function pie_custom_functions_init(){
     add_pie_admin_role_to_existing_users();
