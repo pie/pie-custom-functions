@@ -88,5 +88,3 @@ function update_check(){
         pie_custom_functions_init();
     }
 }
-
-
