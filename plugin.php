@@ -38,6 +38,12 @@ function pie_custom_functions_load_composer(){
 
 register_activation_hook(__FILE__ , __NAMESPACE__ . '\pie_custom_functions_init');
 
+/**
+ * This function handles copying the MU plugin file to the correct location and updating the version number
+ * in the database.
+ *
+ * @return void
+ */
 function pie_custom_functions_init(){
 
     if(!function_exists('get_plugin_data')){
