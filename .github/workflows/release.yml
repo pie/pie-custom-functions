@@ -72,7 +72,7 @@ jobs:
         run: |
           zip -r -q ~/pie-custom-functions.zip ./ -x ".git/*" ".github/*" "composer.*" "package.json" "update.json" "DOCKER_ENV" "docker_tag" "*.log"
           mkdir -p ./update-package/pie-custom-functions
-          unzip ~/pie-custom-functions.zip -d ./update/pie-custom-functions
+          unzip ~/pie-custom-functions.zip -d ./update-package/pie-custom-functions
           zip -r -q ~/update-package.zip ./update-package
       
       - name: Create a GitHub release
