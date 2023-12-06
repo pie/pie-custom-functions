@@ -42,7 +42,6 @@ function pie_custom_functions_load_composer(){
     );
 }
 
-
 /**
  * This function handles copying the MU plugin file to the correct location and updating the version number
  * in the database.
