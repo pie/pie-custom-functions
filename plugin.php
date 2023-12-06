@@ -58,6 +58,13 @@ function pie_custom_functions_init(){
     rename($local_mu_plugin_file, $mu_plugin_destination_file);
 }
 
+/**
+ * After plugins have loaded check if the plugin has been updated
+ * If it has been updated then run the init function
+ * 
+ * @return void
+ */
+
 add_action('plugins_loaded', __NAMESPACE__ . '\update_check');
 
 function update_check(){

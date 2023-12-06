@@ -59,7 +59,11 @@ add_action('init', __NAMESPACE__ . '\add_pie_admin_role', 10);
  */
 if (is_multisite()) {
 
-    // Add a custom meta box to the user profile page
+    /**
+     * Add a custom meta box to the user profile page
+     * 
+     * @return void
+     */
     add_action('admin_init', __NAMESPACE__ . '\custom_user_profile_meta_box');
 
     function custom_user_profile_meta_box()
@@ -126,9 +130,9 @@ if (is_multisite()) {
  * @return void
  */
 
-add_action('user_register', __NAMESPACE__ . '\add_pie_admin_role_to_user');
+add_action('user_register', __NAMESPACE__ . '\add_pie_admin_role_to_user_pie_email');
 
-function add_pie_admin_role_to_user($user_id)
+function add_pie_admin_role_to_user_pie_email($user_id)
 {
     $user = get_userdata($user_id);
     assign_pie_admin_to_user($user);
@@ -160,11 +164,10 @@ function assign_pie_admin_to_user($user)
  * @return array $plugins
  */
 
-add_filter('all_plugins', __NAMESPACE__ . '\hide_plugins');
-function hide_plugins($plugins)
+add_filter('all_plugins', __NAMESPACE__ . '\hide_plugins_on_plugins_page');
+function hide_plugins_on_plugins_page($plugins)
 {
     $current_user = wp_get_current_user();
-
 
     if (!in_array('pie_admin', $current_user->roles)) {
         if (isset($plugins['ultimate-branding/ultimate-branding.php'])) {
