@@ -76,4 +76,4 @@ jobs:
           name: ${{ needs.check_for_release.outputs.version }}
           body: ${{ needs.check_for_release.outputs.release_body }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "~/invision-community-single-logout.zip" 
+          artifacts: "~/pie-custom-functions.zip" 
