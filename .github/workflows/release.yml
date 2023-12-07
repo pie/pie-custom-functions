@@ -61,6 +61,7 @@ jobs:
           sed -i "s/version\":\ \"[0-9]\+\.\?[0-9]*\.\?[0-9]*/version\":\ \"${{ needs.check_for_release.outputs.version }}/g" ./update.json
           sed -i "s/download\/[0-9]\+\.\?[0-9]*\.\?[0-9]*/download\/${{ needs.check_for_release.outputs.version }}/g" ./update.json
           sed -i "s/Version:\ [0-9]\+\.\?[0-9]*\.\?[0-9]*/Version:\ ${{ needs.check_for_release.outputs.version }}/g" ./${{ github.event.repository.name }}.php
+          sed -i "s/Version:\ [0-9]\+\.\?[0-9]*\.\?[0-9]*/Version:\ ${{ needs.check_for_release.outputs.version }}/g" ./${{ github.event.repository.name }}-mu.php
           sed -i "s/\[Unreleased\]/\[Unreleased\]\r\n\r\n## \[${{ needs.check_for_release.outputs.version }}\] ${{steps.get_date.outputs.date}} /g" ./changelog.md
           git config user.name "Github Actions"
           git config user.email "<>"
@@ -80,7 +81,7 @@ jobs:
         # Only runs if all of the files exists
         run: |
           sed -i '/^[[:space:]]*$/d' .zipignore
-          sed 's/^/${{ github.event.repository.name }}\//' .zipignore > ../.zipignore    
+          sed 's/^/${{ github.event.repository.name }}\//' .zipignore > ../.zipignore   
   
       - name: File does not exist
         if: steps.check_files.outputs.files_exists != 'true'
