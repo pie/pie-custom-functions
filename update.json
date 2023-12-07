@@ -1,15 +1,15 @@
 {
     "name": "Pie Custom Functions",
-    "version": "1.1.0",
-    "download_url": "https://github.com/pie/pie-custom-functions/releases/download/1.1.0/pie-custom-functions.zip",
+    "version": "1.2.0",
+    "download_url": "https://github.com/pie/pie-custom-functions/releases/download/1.2.0/pie-custom-functions.zip",
     "banners": {
-        "low" : "./assets/banners/banner-772x225.png",
-        "high" : "./assets/banners/banner-1544x500.png"
+        "low" : "https://pie.github.io/pie-custom-functions/assets/banners/banner-772x250.png",
+        "high" : "https://pie.github.io/pie-custom-functions/assets/banners/banner-1544x500.png"
     },
     "icons": {
-        "1x" : "./assets/icons/icon-128x128.png",
-        "2x" : "./assets/icons/icon-256x256.png",
-        "svg" : "./assets/icons/icon.svg"
+        "1x" : "https://pie.github.io/pie-custom-functions/assets/icons/icon-128x128.png",
+        "2x" : "https://pie.github.io/pie-custom-functions/assets/icons/icon-256x256.png",
+        "svg" : "https://pie.github.io/pie-custom-functions/assets/icons/icon.svg"
     },
     "sections": {
         "description" : "Custom functions for Pie Hosting"
