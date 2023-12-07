@@ -1,9 +1,0 @@
-name: Maybe Create a Release
-
-on: 
-  push:
-    branches:
-      - main
-jobs:
-  run-release-workflow:
-    uses: pie/.github/.github/workflows/release.yaml@main
