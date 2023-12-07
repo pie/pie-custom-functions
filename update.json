@@ -1,7 +1,7 @@
 {
     "name": "Pie Custom Functions",
-    "version": "1.1.0",
-    "download_url": "https://github.com/pie/pie-custom-functions/releases/download/1.1.0/pie-custom-functions.zip",
+    "version": "1.2.0",
+    "download_url": "https://github.com/pie/pie-custom-functions/releases/download/1.2.0/pie-custom-functions.zip",
     "banners": {
         "low" : "./assets/banners/banner-772x225.png",
         "high" : "./assets/banners/banner-1544x500.png"
