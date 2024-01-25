@@ -227,7 +227,7 @@ if (!empty($pie_admins)) {
 
 add_action('admin_init', __NAMESPACE__ . '\staging_setup');
 function staging_setup(){
-    if (strpos($_SERVER['HTTP_HOST'], 'staging.tempurl.host') !== false) {
+    if (is_staging_site()) {
 
         if( is_multisite()) {
             update_domain_mapping();
@@ -267,6 +267,22 @@ function update_domain_mapping(){
         update_blog_option($site_id, 'siteurl', $site_url);
         update_blog_option($site_id, 'home', $site_url);
     }
+}
+
+/**
+ * Check if the site is a staging site
+ * 
+ * WPMUDEV always adds 'staging.tempurl.host' to the end of the domain for staging sites
+ * 
+ * If we wish to us function on other sites and hosts we can extend function as necessary
+ * 
+ * @return bool
+ */
+function is_staging_site(){
+    if(strpos($_SERVER['HTTP_HOST'], 'staging.tempurl.host') !== false){
+        return true;
+    }
+    return false;
 }
 
 
