@@ -227,7 +227,7 @@ if (!empty($pie_admins)) {
 
 add_action('admin_init', __NAMESPACE__ . '\staging_setup');
 function staging_setup(){
-    if (strpos($_SERVER['HTTP_HOST'], 'staging') !== false) {
+    if (strpos($_SERVER['HTTP_HOST'], 'staging.tempurl.host') !== false) {
 
         if( is_multisite()) {
             update_domain_mapping();
@@ -254,18 +254,18 @@ function update_domain_mapping(){
 
     $main_site_url = str_replace('http://', '', $main_site_url);
     $main_site_url = str_replace('https://', '', $main_site_url);
-    
     foreach($sites as $site){
         $site_id = $site->blog_id;
         $site_url = $site->domain;
-        if(strpos($site_url, 'staging') === false){
-            $site_url = $site_url . '.' . $main_site_url;
-            update_blog_details($site_id, array('domain' => $site_url, 'path' => '/'));
-            update_network_option($site_id, 'siteurl', $site_url);
-            update_network_option($site_id, 'home', $site_url);
-            update_blog_option($site_id, 'siteurl', $site_url);
-            update_blog_option($site_id, 'home', $site_url);
+        if('1' == $site_id || strpos($site_url, 'staging.tempurl.host') ){
+            continue;
         }
+        $site_domain = $site_url . '.' . $main_site_url;
+        $site_url = 'https://' . $site_url . '.' . $main_site_url;
+        update_blog_details($site_id, array('domain' => $site_domain, 'path' => '/'));
+
+        update_blog_option($site_id, 'siteurl', $site_url);
+        update_blog_option($site_id, 'home', $site_url);
     }
 }
 
