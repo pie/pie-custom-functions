@@ -216,3 +216,73 @@ $pie_admins = wp_list_pluck($users, 'ID');
 if (!empty($pie_admins)) {
     define('WPMUDEV_LIMIT_TO_USER', implode(',', $pie_admins));
 }
+
+
+/**
+ * Staging setup, check the url and if it contains the word staging then begin staging setup
+ * Always set to staging as WPMU DEV has staging setup for all sites
+ * 
+ * @return void
+ */
+
+add_action('admin_init', __NAMESPACE__ . '\staging_setup');
+function staging_setup(){
+    if (is_staging_site()) {
+
+        if( is_multisite()) {
+            update_domain_mapping();
+        }
+    }
+}
+
+/**
+ * Update the domain mapping for all sites on the multisite network
+ * 
+ * For example if the main site is https://pie.staging.tempurl.host and the staging site is https://.pie.co.de then the staging site will be updated to https://pie.co.de.pie.staging.tempurl.host
+ * 
+ * TO Do: Check on how get_site_url and other functions work with multisite.
+ * 
+ * To Do: Ensure that links in network admin are updated to the new domain
+ * 
+ * @return void
+ */
+
+
+function update_domain_mapping(){
+    $sites = get_sites();
+    $main_site_url = get_site_url(1);
+
+    $main_site_url = str_replace('http://', '', $main_site_url);
+    $main_site_url = str_replace('https://', '', $main_site_url);
+    foreach($sites as $site){
+        $site_id = $site->blog_id;
+        $site_url = $site->domain;
+        if('1' == $site_id || strpos($site_url, 'staging.tempurl.host') ){
+            continue;
+        }
+        $site_domain = $site_url . '.' . $main_site_url;
+        $site_url = 'https://' . $site_url . '.' . $main_site_url;
+        update_blog_details($site_id, array('domain' => $site_domain, 'path' => '/'));
+
+        update_blog_option($site_id, 'siteurl', $site_url);
+        update_blog_option($site_id, 'home', $site_url);
+    }
+}
+
+/**
+ * Check if the site is a staging site
+ * 
+ * WPMUDEV always adds 'staging.tempurl.host' to the end of the domain for staging sites
+ * 
+ * If we wish to us function on other sites and hosts we can extend function as necessary
+ * 
+ * @return bool
+ */
+function is_staging_site(){
+    if(strpos($_SERVER['HTTP_HOST'], 'staging.tempurl.host') !== false){
+        return true;
+    }
+    return false;
+}
+
+
