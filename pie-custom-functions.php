@@ -4,7 +4,7 @@
  * Description: Custom functions for Pie Hosting
  * Author: Pie Hosting
  * Author URI: https://pie.co.de
- * Version: 1.2.0
+ * Version: 1.2.2
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: pie-custom-functions
@@ -55,12 +55,12 @@ function pie_custom_functions_init(){
 
     update_option('pie_custom_functions_version', get_plugin_data(__FILE__)['Version']);
 
-    $local_mu_plugin_file = plugin_dir_path(__FILE__) . 'pie_mu_custom_functions.php';
+    $local_mu_plugin_file = plugin_dir_path(__FILE__) . 'pie-custom-functions-mu.php';
 
     // Set the path for the MU plugin file
 
     if(defined('WPMU_PLUGIN_DIR')){
-        $mu_plugin_destination_file = WPMU_PLUGIN_DIR . '/pie_mu_custom_functions.php';
+        $mu_plugin_destination_file = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
     }
 
 
