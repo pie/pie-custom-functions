@@ -1,5 +1,12 @@
-# Pie Custom Functions
-Deploying updates:
+# PIE Hosting Companion
+
+## Installation:
+
+1. Download the latest copy of pie-custom-functions.zip from https://github.com/pie/pie-custom-functions/releases
+1. Upload via wp-admin
+1. Activate & enjoy
+
+## Deploying updates:
 
 This plugin template is set up to work with integrated WordPress updates through the use of
 [yahnis-elsts/plugin-update-checker](https://github.com/YahnisElsts/plugin-update-checker) and 
@@ -12,8 +19,7 @@ In order to deploy an update:
     * `release:major`
     * `release:minor`
     * `release:patch`
-1. When merged, the `release.yml` workflow will update all of your version numbers and commit them back into main and create a github release with two artifacts:
+1. When merged, the `release.yml` workflow will update all of your version numbers and commit them back into main and create a github release with an extra artifact:
     1. `plugin-slug.zip` - the uploadable plugin for manual installation
-    1. `update.zip` containing the files needed by the updater
-1. Updates should then show in wp-admin for any users of the plugin
+2. Updates should then show in wp-admin for any users of the plugin
 

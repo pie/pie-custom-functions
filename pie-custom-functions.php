@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Pie Custom Functions
- * Description: Custom functions for Pie Hosting
- * Author: Pie Hosting
+ * Plugin Name: PIE Hosting Companion
+ * Description: Required Functionality for PIE Hosting
+ * Author: The team at PIE
  * Author URI: https://pie.co.de
  * Version: 1.3.0
  * License: GPL2

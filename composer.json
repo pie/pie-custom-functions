@@ -1,6 +1,6 @@
 {
     "name": "pie/pie-custom-functions",
-    "description": "Custom functions for Pie Hosting",
+    "description": "Required Functionality for PIE Hosting",
     "type": "wordpress-plugin",
     "license": "GPL",
     "authors": [
