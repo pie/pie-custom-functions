@@ -5,7 +5,7 @@
  * Description: Custom functions for Pie Hosting
  * Author: Pie Hosting
  * Author URI: https://pie.co.de
- * Version: 1.2.2
+ * Version: 1.3.0
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: pie-custom-functions
