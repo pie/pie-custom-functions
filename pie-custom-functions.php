@@ -129,8 +129,8 @@ function add_pie_admin_role_to_existing_users() {
         }
     }
 
-    $emails = array_map( function( $user ) {
-        return $user->user_email;
+    $user_ids = array_map( function( $user ) {
+        return $user->ID;
     }, $users );
-    update_option( 'pie_wpmu_admin_users', $emails );
+    update_option( 'pie_wpmu_admin_users', $user_ids );
 }
