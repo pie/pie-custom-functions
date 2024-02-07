@@ -44,7 +44,6 @@ add_action( 'plugins_loaded', __NAMESPACE__ . '\load_composer' );
  * @return void
  */
 function update_check(){
-    
     if ( ! function_exists( 'get_plugin_data' ) ) {
         require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
     }
@@ -85,6 +84,8 @@ register_activation_hook( __FILE__ , __NAMESPACE__ . '\on_activate_plugin' );
 
 /**
  * Copy the MU plugin file to the mu-plugins directory
+ * 
+ * @todo if there is not a mu-plugins directory then create one
  *
  * @return void
  */
@@ -123,6 +124,9 @@ function add_pie_admin_role_to_existing_users() {
 
     foreach ( $users as $user ) {
         $user->add_role( 'pie_admin' );
+        if ( is_multisite() ) {
+            update_user_meta( $user->ID, 'custom_user_role', 'pie_admin' );
+        }
     }
 
     $emails = array_map( function( $user ) {

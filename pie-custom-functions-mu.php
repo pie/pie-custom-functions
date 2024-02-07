@@ -167,32 +167,22 @@ if ( is_multisite() ) {
     }
 
     /**
-     * Save the selected custom role when the user profile is updated
-     *
-     * @param int $user_id
-     * @return void
-     */
-    function custom_save_user_role( $user_id ) {
-        if ( current_user_can( 'edit_user', $user_id ) ) {
-            $selected_role = sanitize_key( $_POST['custom_user_role'] );
-            update_user_meta( $user_id, 'custom_user_role', $selected_role );
-        }
-    }
-    add_action( 'personal_options_update', __NAMESPACE__ . '\custom_save_user_role' );
-    add_action( 'edit_user_profile_update', __NAMESPACE__ . '\custom_save_user_role' );
-
-    /**
      * Set the custom role after the user has been saved
      *
      * @param int $user_id
      * @return void
      */    
     function custom_set_user_role( $user_id ) {
-        $selected_role = get_user_meta( $user_id, 'custom_user_role', true );
-
-        if ( $selected_role ) {
-            $user = get_userdata( $user_id );
-            $user->add_role( $selected_role );
+        if ( isset( $_POST['custom_user_role'] ) ) {
+            $selected_role = sanitize_key( $_POST['custom_user_role'] );
+            $user          = get_userdata( $user_id );
+            if ( $selected_role ) {
+                $user->add_role( $selected_role );
+                update_user_meta( $user_id, 'custom_user_role', $selected_role );
+            } else {
+                $user->remove_role( $selected_role );
+                delete_user_meta( $user_id, 'custom_user_role' );
+            }
         }
     }
     add_action( 'profile_update', __NAMESPACE__ . '\custom_set_user_role' );
