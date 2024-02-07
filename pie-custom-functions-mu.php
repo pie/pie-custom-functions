@@ -20,29 +20,31 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Add the 'Pie Admin' role to any existing user that has an email address ending in '@pie.co.de'
-$pie_admins = get_option( 'pie_wpmu_admin_users' );
-if ( ! empty( $pie_admins ) ) {
-    define( 'WPMUDEV_LIMIT_TO_USER', implode( ',', $pie_admins ) );
+$user  = wp_get_current_user();
+$email = isset( $user->user_email ) ? $user->user_email : '';
+
+// Determine whether user is a Pie Admin and can access other features
+if ( $email && is_pie_admin( $email ) ) {
+    define( 'WPMUDEV_LIMIT_TO_USER', $user->ID );
+
+    add_filter( 'all_plugins', __NAMESPACE__ . '\hide_plugins_on_plugins_page' );
+    add_action( 'admin_menu', __NAMESPACE__ . '\hide_plugins_from_side_bar' );
+    add_action( 'network_admin_menu', __NAMESPACE__ . '\hide_plugins_from_side_bar' );
 }
 
 /**
- * Add the 'Pie Admin' role to any user that registers with an email address ending in '@pie.co.de'
+ * Logic to determine whether the current user is a Pie Admin
  * 
- * @param int $user_id
- * @return void
+ * Currently this checks their email is @pie.co.de
+ *
+ * @param string $email
+ * @return boolean
  */
-function add_pie_admin_role_to_user_pie_email( $user_id ) {
-    $user  = get_userdata( $user_id );
-    $email = $user->user_email;
+function is_pie_admin( $email ) {
     $email = explode( '@', $email );
     $email = $email[1];
-
-    if ( 'pie.co.de' === $email ) {
-        $user->add_role( 'pie_admin' );
-    }
+    return 'pie.co.de' === $email;
 }
-add_action( 'user_register', __NAMESPACE__ . '\add_pie_admin_role_to_user_pie_email' );
 
 /**
  * Remove the 'Brand Pro' and 'Pie Custom Functions' plugins from the plugins page for all users except Pie Admin
@@ -51,20 +53,15 @@ add_action( 'user_register', __NAMESPACE__ . '\add_pie_admin_role_to_user_pie_em
  * @return array $plugins
  */
 function hide_plugins_on_plugins_page( $plugins ) {
-    $current_user = wp_get_current_user();
-
-    if ( ! in_array( 'pie_admin', $current_user->roles ) ) {
-        if ( isset( $plugins['ultimate-branding/ultimate-branding.php'] ) ) {
-             unset( $plugins['ultimate-branding/ultimate-branding.php'] );
-        }
-        if ( isset( $plugins['pie-custom-functions/pie-custom-functions.php'] ) ) {
-             unset( $plugins['pie-custom-functions/pie-custom-functions.php'] );
-        }
+    if ( isset( $plugins['ultimate-branding/ultimate-branding.php'] ) ) {
+            unset( $plugins['ultimate-branding/ultimate-branding.php'] );
+    }
+    if ( isset( $plugins['pie-custom-functions/pie-custom-functions.php'] ) ) {
+            unset( $plugins['pie-custom-functions/pie-custom-functions.php'] );
     }
 
     return $plugins;
 }
-add_filter( 'all_plugins', __NAMESPACE__ . '\hide_plugins_on_plugins_page' );
 
 /**
  * Remove the 'Ultimate Branding' tips post type and 'Ultimate Branding' menu item from the admin menu for all users except Pie Admin
@@ -72,16 +69,11 @@ add_filter( 'all_plugins', __NAMESPACE__ . '\hide_plugins_on_plugins_page' );
  * @return void
  */
 function hide_plugins_from_side_bar() {
-    $current_user = wp_get_current_user();
-
-    if ( ! in_array( 'pie_admin', $current_user->roles ) ) {
-        add_filter( 'branda_permissions_allowed_roles', '__return_empty_array' );
-        remove_menu_page( 'edit.php?post_type=admin_panel_tip' );
-        remove_menu_page( 'wpmudev-videos' );
-    }
+    add_filter( 'branda_permissions_allowed_roles', '__return_empty_array' );
+    remove_menu_page( 'edit.php?post_type=admin_panel_tip' );
+    remove_menu_page( 'wpmudev-videos' );
 }
-add_action( 'admin_menu', __NAMESPACE__ . '\hide_plugins_from_side_bar' );
-add_action( 'network_admin_menu', __NAMESPACE__ . '\hide_plugins_from_side_bar' );
+
 
 /**
  * Add a meta box to the user profile page to allow the user to select a custom role
@@ -133,57 +125,4 @@ if ( is_multisite() ) {
             update_blog_option( $site_id, 'home', $site_url );
         }
     }
-
-    /**
-     * Add a custom meta box to the user profile page
-     * 
-     * @return void
-     */
-    function custom_user_profile_meta_box() {
-        add_action( 'show_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback' );
-        add_action( 'edit_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback' );
-    }
-    add_action( 'admin_init', __NAMESPACE__ . '\custom_user_profile_meta_box' );
-
-    /**
-     * Display the custom meta box on the user profile page
-     *
-     * @param WP_User $user
-     * @return void
-     */
-    function custom_user_role_meta_box_callback( $user ) {
-        $selected_role = get_user_meta( $user->ID, 'custom_user_role', true );
-
-        echo '<h3>Custom User Role</h3>';
-        echo '<table class="form-table"><tr>';
-        echo '<th><label for="custom_user_role">Select Custom User Role:</label></th>';
-        echo '<td><select name="custom_user_role" id="custom_user_role">';
-
-        $selected = selected( $selected_role, 'pie_admin', false );
-        echo "<option value='' $selected>Select Role</option>";
-        echo "<option value='pie_admin' $selected>Pie Admin</option>";
-
-        echo '</select></td></tr></table>';
-    }
-
-    /**
-     * Set the custom role after the user has been saved
-     *
-     * @param int $user_id
-     * @return void
-     */    
-    function custom_set_user_role( $user_id ) {
-        if ( isset( $_POST['custom_user_role'] ) ) {
-            $selected_role = sanitize_key( $_POST['custom_user_role'] );
-            $user          = get_userdata( $user_id );
-            if ( $selected_role ) {
-                $user->add_role( $selected_role );
-                update_user_meta( $user_id, 'custom_user_role', $selected_role );
-            } else {
-                $user->remove_role( $selected_role );
-                delete_user_meta( $user_id, 'custom_user_role' );
-            }
-        }
-    }
-    add_action( 'profile_update', __NAMESPACE__ . '\custom_set_user_role' );
 }

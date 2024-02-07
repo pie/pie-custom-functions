@@ -73,12 +73,6 @@ function on_activate_plugin() {
     }
     update_option( 'pie_custom_functions_version', get_plugin_data( __FILE__ )['Version'] );
     install_mu_plugin();
-
-    if ( defined( 'WPMU_PLUGIN_DIR' ) && file_exists( WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php' )) {
-        require_once( WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php' );
-        add_pie_admin_role();
-        add_pie_admin_role_to_existing_users();
-    }
 }
 register_activation_hook( __FILE__ , __NAMESPACE__ . '\on_activate_plugin' );
 
@@ -98,39 +92,4 @@ function install_mu_plugin(){
     }
 
     rename( $local_mu_plugin_file, $mu_plugin_destination_file );
-}
-
-/**
- * Add the 'Pie Admin' role
- *
- * @return void
- */
-function add_pie_admin_role() {
-    if ( ! get_role( 'pie_admin' ) ) {
-        add_role( 'pie_admin', 'Pie Admin', get_role( 'administrator' )->capabilities );
-    }
-}
-
-/**
- * Add the 'Pie Admin' role to any existing user that has an email address ending in '@pie.co.de'
- * 
- * @return void
- */
-function add_pie_admin_role_to_existing_users() {
-    $users = get_users( array(
-        'search'         => '*@pie.co.de',
-        'search_columns' => array( 'user_email' ),
-    ));
-
-    foreach ( $users as $user ) {
-        $user->add_role( 'pie_admin' );
-        if ( is_multisite() ) {
-            update_user_meta( $user->ID, 'custom_user_role', 'pie_admin' );
-        }
-    }
-
-    $user_ids = array_map( function( $user ) {
-        return $user->ID;
-    }, $users );
-    update_option( 'pie_wpmu_admin_users', $user_ids );
 }
