@@ -17,55 +17,25 @@ namespace PIE\CustomFunctions;
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 // Exit if accessed directly.
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
-
-// Hookups
-register_activation_hook(__FILE__ , __NAMESPACE__ . '\pie_custom_functions_init');
-add_action('plugins_loaded', __NAMESPACE__ . '\pie_custom_functions_load_composer');
-add_action('plugins_loaded', __NAMESPACE__ . '\update_check');
 
 /**
  * Load Composer autoloader
  *
  * @return void
  */
-function pie_custom_functions_load_composer(){
+function load_composer(){
     require_once plugin_dir_path(__FILE__) . 'vendor/autoload.php';
 
-    $update_checker = PucFactory::buildUpdateChecker(
+    PucFactory::buildUpdateChecker(
         'https://pie.github.io/pie-custom-functions/update.json',
         __FILE__,
         'pie-custom-functions'
     );
 }
-
-/**
- * This function handles copying the MU plugin file to the correct location and updating the version number
- * in the database.
- *
- * @return void
- */
-function pie_custom_functions_init(){
-
-    if(!function_exists('get_plugin_data')){
-        require_once(ABSPATH . 'wp-admin/includes/plugin.php');
-    }
-
-    update_option('pie_custom_functions_version', get_plugin_data(__FILE__)['Version']);
-
-    $local_mu_plugin_file = plugin_dir_path(__FILE__) . 'pie-custom-functions-mu.php';
-
-    // Set the path for the MU plugin file
-
-    if(defined('WPMU_PLUGIN_DIR')){
-        $mu_plugin_destination_file = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
-    }
-
-
-    rename($local_mu_plugin_file, $mu_plugin_destination_file);
-}
+add_action( 'plugins_loaded', __NAMESPACE__ . '\load_composer' );
 
 /**
  * After plugins have loaded check if the plugin has been updated
@@ -75,15 +45,88 @@ function pie_custom_functions_init(){
  */
 function update_check(){
     
-    if(!function_exists('get_plugin_data')){
-        require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+    if ( ! function_exists( 'get_plugin_data' ) ) {
+        require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
     }
 
-    $current_version = get_option('pie_custom_functions_version');
-    $new_version = get_plugin_data(__FILE__)['Version'];
+    $current_version = get_option( 'pie_custom_functions_version' );
+    $new_version     = get_plugin_data( __FILE__ )['Version'];
 
-    if(version_compare($current_version, $new_version, '<')){
-        pie_custom_functions_init();
+    if( version_compare( $current_version, $new_version, '<' ) ) {
+        update_option( 'pie_custom_functions_version', $new_version );
+        install_mu_plugin();
+    }
+}
+add_action( 'plugins_loaded', __NAMESPACE__ . '\update_check' );
+
+/**
+ * Activation hook
+ * Updates plugin version number in the options table
+ * Installs the MU plugin
+ * Adds the 'Pie Admin' role
+ * Adds the 'Pie Admin' role to any existing user that has an email address ending in '@pie.co.de'
+ *
+ * @return void
+ */
+function on_activate_plugin() {
+    if( ! function_exists( 'get_plugin_data' ) ){
+        require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+    }
+    update_option( 'pie_custom_functions_version', get_plugin_data( __FILE__ )['Version'] );
+    install_mu_plugin();
+
+    if ( defined( 'WPMU_PLUGIN_DIR' ) && file_exists( WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php' )) {
+        require_once( WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php' );
+        add_pie_admin_role();
+        add_pie_admin_role_to_existing_users();
+    }
+}
+register_activation_hook( __FILE__ , __NAMESPACE__ . '\on_activate_plugin' );
+
+/**
+ * Copy the MU plugin file to the mu-plugins directory
+ *
+ * @return void
+ */
+function install_mu_plugin(){
+    $local_mu_plugin_file = plugin_dir_path( __FILE__ ) . 'pie-custom-functions-mu.php';
+
+    // Set the path for the MU plugin file
+    if ( defined( 'WPMU_PLUGIN_DIR' ) ) {
+        $mu_plugin_destination_file = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
+    }
+
+    rename( $local_mu_plugin_file, $mu_plugin_destination_file );
+}
+
+/**
+ * Add the 'Pie Admin' role
+ *
+ * @return void
+ */
+function add_pie_admin_role() {
+    if ( ! get_role( 'pie_admin' ) ) {
+        add_role( 'pie_admin', 'Pie Admin', get_role( 'administrator' )->capabilities );
     }
 }
 
+/**
+ * Add the 'Pie Admin' role to any existing user that has an email address ending in '@pie.co.de'
+ * 
+ * @return void
+ */
+function add_pie_admin_role_to_existing_users() {
+    $users = get_users( array(
+        'search'         => '*@pie.co.de',
+        'search_columns' => array( 'user_email' ),
+    ));
+
+    foreach ( $users as $user ) {
+        $user->add_role( 'pie_admin' );
+    }
+
+    $emails = array_map( function( $user ) {
+        return $user->user_email;
+    }, $users );
+    update_option( 'pie_wpmu_admin_users', $emails );
+}
