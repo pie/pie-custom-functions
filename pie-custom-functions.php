@@ -51,7 +51,7 @@ function update_check(){
     $current_version = get_option( 'pie_custom_functions_version' );
     $new_version     = get_plugin_data( __FILE__ )['Version'];
 
-    if( version_compare( $current_version, $new_version, '<' ) ) {
+    if ( version_compare( $current_version, $new_version, '<' ) ) {
         update_option( 'pie_custom_functions_version', $new_version );
         install_mu_plugin();
     }

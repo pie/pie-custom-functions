@@ -26,7 +26,7 @@ $email = isset( $user->user_email ) ? $user->user_email : '';
 // Determine whether user is a Pie Admin and can access other features
 if ( $email && is_pie_admin( $email ) ) {
     define( 'WPMUDEV_LIMIT_TO_USER', $user->ID );
-
+} else {
     add_filter( 'all_plugins', __NAMESPACE__ . '\hide_plugins_on_plugins_page' );
     add_action( 'admin_menu', __NAMESPACE__ . '\hide_plugins_from_side_bar' );
     add_action( 'network_admin_menu', __NAMESPACE__ . '\hide_plugins_from_side_bar' );
@@ -54,10 +54,10 @@ function is_pie_admin( $email ) {
  */
 function hide_plugins_on_plugins_page( $plugins ) {
     if ( isset( $plugins['ultimate-branding/ultimate-branding.php'] ) ) {
-            unset( $plugins['ultimate-branding/ultimate-branding.php'] );
+        unset( $plugins['ultimate-branding/ultimate-branding.php'] );
     }
     if ( isset( $plugins['pie-custom-functions/pie-custom-functions.php'] ) ) {
-            unset( $plugins['pie-custom-functions/pie-custom-functions.php'] );
+        unset( $plugins['pie-custom-functions/pie-custom-functions.php'] );
     }
 
     return $plugins;
