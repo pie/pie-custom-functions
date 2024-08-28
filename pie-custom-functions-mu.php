@@ -286,3 +286,18 @@ function is_staging_site(){
 }
 
 
+public static function set_duplicate_site_url_lock() {
+    update_option( 'pcf_siteurl', self::get_duplicate_site_lock_key() );
+}
+public static function get_duplicate_site_lock_key() {
+    $site_url = self::get_site_url_from_source( 'current_wp_site' );
+    $scheme   = parse_url( $site_url, PHP_URL_SCHEME ) . '://';
+    $site_url = str_replace( $scheme, '', $site_url );
+
+    return $scheme . substr_replace(
+        $site_url,
+        '_[wc_subscriptions_siteurl]_',
+        intval( strlen( $site_url ) / 2 ),
+        0
+    );
+}
