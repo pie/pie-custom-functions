@@ -225,14 +225,26 @@ if (!empty($pie_admins)) {
  * @return void
  */
 
-add_action('admin_init', __NAMESPACE__ . '\staging_setup');
-function staging_setup(){
-    if (is_staging_site()) {
 
-        if( is_multisite()) {
-            update_domain_mapping();
-        }
+// Before performing checks, ensure there is a live site url, if not, assume this is the live site
+set_duplicate_site_url_lock();
+
+if (is_staging_site()) {
+
+    //  Marks all WPCF7 forms as not spam if on staging sie
+    add_filter('wpcf7_spam', '__return_false');
+
+    //  Hooks into admin_init for code specific to the area on staging sites
+    add_action('admin_init', __NAMESPACE__ . '\staging_setup');
+    
+}
+
+function staging_setup(){
+   
+    if( is_multisite()) {
+        update_domain_mapping();
     }
+
 }
 
 /**
@@ -269,20 +281,49 @@ function update_domain_mapping(){
     }
 }
 
+
 /**
- * Check if the site is a staging site
  * 
- * WPMUDEV always adds 'staging.tempurl.host' to the end of the domain for staging sites
+ *  Compares known live site url and curent url to check if this is a staging site
  * 
- * If we wish to us function on other sites and hosts we can extend function as necessary
- * 
- * @return bool
  */
-function is_staging_site(){
-    if(strpos($_SERVER['HTTP_HOST'], 'staging.tempurl.host') !== false){
-        return true;
-    }
-    return false;
+
+ 
+function set_duplicate_site_url_lock() {
+
+    // Add option does not overwrite options that are already set
+    add_option( 'pcf_siteurl', get_duplicate_site_lock_key() );
+
 }
 
+function get_duplicate_site_lock_key() {
 
+    // Grabs site url from current site
+    $site_url = get_site_url( 'current_wp_site' );
+
+    // Inserts constant into url to ensure no search and replace done to staging will affect it and returns the value
+    return substr_replace(
+        $site_url,
+        '_[pcf_site_url]_',
+        intval( strlen( $site_url ) / 2 ),
+        0
+    );
+}
+
+function is_staging_site() {
+
+    // Gets both current site url and known live site url
+    $pcf_current_site_url = get_option( 'siteurl' );
+    $pcf_live_site_url = get_option( 'pcf_siteurl' );
+
+    // Remove constant from saved live site url to produce accurate live site url
+    $live_site_url = str_replace('_[pcf_site_url]_', '', $pcf_live_site_url);
+
+    // Compare strings of current site and known live site, returns bool
+    if ( $live_site_url === $pcf_current_site_url ) {
+        return false;
+    } else {
+        return true;
+    }
+
+}
