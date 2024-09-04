@@ -227,11 +227,12 @@ if (!empty($pie_admins)) {
 
 add_action('admin_init', __NAMESPACE__ . '\staging_setup');
 function staging_setup(){
-    add_option( 'staging_setup_working',true);
+
+    // Before performing checks, ensure there is a live site url, if not, assume this is the live site
     set_duplicate_site_url_lock();
-    add_option( 'set_duplicate_working',true);
+
     if (is_staging_site()) {
-        add_option( 'staging_check_working',true);
+        add_option( 'staging_check_result',true);
         if( is_multisite()) {
             update_domain_mapping();
         }
@@ -273,6 +274,8 @@ function update_domain_mapping(){
 }
 
 /**
+ * Previous staging site check
+ * 
  * Check if the site is a staging site
  * 
  * WPMUDEV always adds 'staging.tempurl.host' to the end of the domain for staging sites
@@ -290,24 +293,20 @@ function update_domain_mapping(){
 
 /**
  * 
- * erm
+ *  Code to compare known live site url and curent url to check if this is a staging site
  * 
  */
 
  
 function set_duplicate_site_url_lock() {
-    
-    // Creates bool option_exists to check if theres already a siteurl stored
-    // $id = "pcf_siteurl";
-    // $option_exists = (get_option($id) !== null);
-
-    add_option( 'set_duplicate_working', true);
+       
     // If no stored live url, assume this is live site and add url to options
+    // Options added for debugging (look into database to see what it is returning)
     if (get_option('pcf_siteurl') === false) {
-        add_option( 'option_exists_working',true);
+        add_option( 'option_exists_result',false);
         add_option( 'pcf_siteurl', get_duplicate_site_lock_key() );
     } else {
-        add_option( 'option_exists_working',false);
+        add_option( 'option_exists_result',true);
     }
 
 }
@@ -331,24 +330,13 @@ function get_duplicate_site_lock_key() {
 function is_staging_site() {
 
     // Gets both current site url and known live site url
-    // $pcf_current_site_url = strval(self::get_site_url_from_source( 'current_wp_site' ));
     $pcf_current_site_url = strval(get_option("siteurl"));
     $pcf_live_site_url = strval(get_live_site_url());
-    add_option( 'staging_site_reference_working',true);
-    add_option( 'staging_site_reference_current_working',$pcf_current_site_url);
-    add_option( 'staging_site_reference_live_working',$pcf_live_site_url);
+    
+    // Options added for debugging (look into database to see what it is returning)
+    add_option( 'staging_site_reference_current',$pcf_current_site_url);
+    add_option( 'staging_site_reference_live',$pcf_live_site_url);
 
-    $pcf_current_site_url_save = strval($pcf_current_site_url);
-    add_option( 'staging_site_reference_save_working',$pcf_current_site_url_save);
-
-    $pcf_current_site_url_save = strval(substr_replace(
-        $pcf_current_site_url_save,
-        '_[pcf_site_url]_', 
-        4+intval( strlen( $pcf_current_site_url_save ) / 2 ),
-        0
-    ));
-
-    add_option( 'staging_site_reference_save_1_working',$pcf_current_site_url_save);
 
     $pcf_current_site_url = strval(substr_replace(
         $pcf_current_site_url,
@@ -357,55 +345,25 @@ function is_staging_site() {
         0
     ));
 
-    
-    // $pcf_current_site_url = str_replace( 'https://' ,'', $pcf_current_site_url );
-    // add_option( 'staging_site_reference_current_3_working',$pcf_current_site_url);
-
-    // Inserts constant into url to ensure no search and replace done to staging will affect it
-    // $pcf_current_site_url = substr_replace(
-    //     $pcf_current_site_url,
-    //     '_[pcf_site_url]_',
-    //     intval( strlen( $pcf_current_site_url ) / 2 ),
-    //     0
-    // );
-
-    add_option( 'staging_site_reference_current_1_working',$pcf_current_site_url);
+    // Options added for debugging (look into database to see what it is returning)
+    add_option( 'staging_site_reference_current_spliced',$pcf_current_site_url);
 
     // Compare strings of current site and known live site
+    // Options added for debugging (look into database to see what it is returning)
     if ( strcmp($pcf_current_site_url , $pcf_live_site_url) !== 0) {
-        add_option( 'comparison_working',true);
+        add_option( 'is_staging_comparison_result',true);
         return true;
     } else {
-        add_option( 'comparison_working',false);
+        add_option( 'is_staging_comparison_result',false);
         return false;
     }
 }
 
 function get_live_site_url( ) {
-    //$blog_id = null, $path = '', $scheme = null 
-
-    // if ( empty( $blog_id ) || ! is_multisite() ) {
-    //     $url = get_option( 'pcf_siteurl' );
-    // } else {
-    //     switch_to_blog( $blog_id );
-    //     $url = get_option( 'pcf_siteurl' );
-    //     restore_current_blog();
-    // }
 
     // Gets option stored on first load
     $url = strval(get_option( 'pcf_siteurl' ));
-    add_option( 'staging_site_reference_live_1_working',$url);
-    // Remove the prefix used to prevent the site URL being updated on WP Engine
-    //$url = str_replace( '_[pcf_site_url]_', '', $url );
-
-    add_option( 'staging_site_reference_live_2_working',$url);
-    //$url = set_url_scheme( $url, $scheme );
-
-    // if ( ! empty( $path ) && is_string( $path ) && strpos( $path, '..' ) === false ) {
-    //     $url .= '/' . ltrim( $path, '/' );
-    // }
-
-    //return apply_filters( 'pcf_site_url', $url, $path, $scheme, $blog_id );
+    add_option( 'get_live_site_result',$url);
 
     return $url;
 };
