@@ -232,7 +232,6 @@ function staging_setup(){
     set_duplicate_site_url_lock();
 
     if (is_staging_site()) {
-        add_option( 'staging_check_result',true);
         if( is_multisite()) {
             update_domain_mapping();
         }
@@ -273,44 +272,19 @@ function update_domain_mapping(){
     }
 }
 
-/**
- * Previous staging site check
- * 
- * Check if the site is a staging site
- * 
- * WPMUDEV always adds 'staging.tempurl.host' to the end of the domain for staging sites
- * 
- * If we wish to us function on other sites and hosts we can extend function as necessary
- * 
- * @return bool
- */
-// function is_staging_site(){
-//     if(strpos($_SERVER['HTTP_HOST'], 'staging.tempurl.host') !== false){
-//         return true;
-//     }
-//     return false;
-// }
 
 /**
  * 
- *  Code to compare known live site url and curent url to check if this is a staging site
+ *  Compares known live site url and curent url to check if this is a staging site
  * 
  */
 
  
 function set_duplicate_site_url_lock() {
-       
-    // If no stored live url, assume this is live site and add url to options
-    // Options added for debugging (look into database to see what it is returning)
-    // if (get_option('pcf_siteurl') == false) {
-    //     add_option( 'option_exists_result',false);
-    //     add_option( 'pcf_siteurl', get_duplicate_site_lock_key() );
-    // } else {
-    //     add_option( 'option_exists_result',true);
-    // }
 
-    // add_option does not overwrite existing options
+    // Add option does not overwrite options that are already set
     add_option( 'pcf_siteurl', get_duplicate_site_lock_key() );
+
 }
 
 function get_duplicate_site_lock_key() {
@@ -318,10 +292,7 @@ function get_duplicate_site_lock_key() {
     // Grabs site url from current site
     $site_url = get_site_url( 'current_wp_site' );
 
-    // $scheme   = parse_url( $site_url, PHP_URL_SCHEME ) . '://';
-    // $site_url = str_replace( $scheme, '', $site_url );
-
-    // Inserts constant into url to ensure no search and replace done to staging will affect it
+    // Inserts constant into url to ensure no search and replace done to staging will affect it and returns the value
     return substr_replace(
         $site_url,
         '_[pcf_site_url]_',
@@ -335,33 +306,15 @@ function is_staging_site() {
     // Gets both current site url and known live site url
     $pcf_current_site_url = get_option( 'siteurl' );
     $pcf_live_site_url = get_option( 'pcf_siteurl' );
-    
-    // Options added for debugging (look into database to see what it is returning)
-    var_dump( $pcf_current_site_url );
-    var_dump( $pcf_live_site_url );
 
+    // Remove constant from saved live site url to produce accurate live site url
     $live_site_url = str_replace('_[pcf_site_url]_', '', $pcf_live_site_url);
 
-    // Options added for debugging (look into database to see what it is returning)
-    var_dump( $live_site_url );
-
-    // Compare strings of current site and known live site
-    // Options added for debugging (look into database to see what it is returning)
+    // Compare strings of current site and known live site, returns bool
     if ( $live_site_url === $pcf_current_site_url ) {
-        var_dump( 'Is not staging site' );
-        // return true;
+        return false;
     } else {
-        var_dump( 'Is staging site' );
-        // return false;
+        return true;
     }
-    wp_die();
 
 }
-
-function get_live_site_url( ) {
-
-    // Gets option stored on first load
-    $url = get_option( 'pcf_siteurl' );
-
-    return $url;
-};
