@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Improved branding and Readme
+- Feature: updated function for checking if on staging site
+- Added: filter for staging to avoid contact form 7 spam
   
 ## [1.3.0] 2024-01-25 
 
