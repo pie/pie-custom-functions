@@ -4,7 +4,7 @@
  * Description: Required Functionality for PIE Hosting
  * Author: The team at PIE
  * Author URI: https://pie.co.de
- * Version: 1.3.0
+ * Version: 1.3.1
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: pie-custom-functions
