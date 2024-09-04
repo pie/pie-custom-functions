@@ -302,13 +302,15 @@ function set_duplicate_site_url_lock() {
        
     // If no stored live url, assume this is live site and add url to options
     // Options added for debugging (look into database to see what it is returning)
-    if (get_option('pcf_siteurl') === false) {
-        add_option( 'option_exists_result',false);
-        add_option( 'pcf_siteurl', get_duplicate_site_lock_key() );
-    } else {
-        add_option( 'option_exists_result',true);
-    }
+    // if (get_option('pcf_siteurl') == false) {
+    //     add_option( 'option_exists_result',false);
+    //     add_option( 'pcf_siteurl', get_duplicate_site_lock_key() );
+    // } else {
+    //     add_option( 'option_exists_result',true);
+    // }
 
+    // add_option does not overwrite existing options
+    add_option( 'pcf_siteurl', get_duplicate_site_lock_key() );
 }
 
 function get_duplicate_site_lock_key() {
