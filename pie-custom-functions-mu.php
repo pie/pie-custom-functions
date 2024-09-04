@@ -225,17 +225,26 @@ if (!empty($pie_admins)) {
  * @return void
  */
 
-add_action('admin_init', __NAMESPACE__ . '\staging_setup');
+
+// Before performing checks, ensure there is a live site url, if not, assume this is the live site
+set_duplicate_site_url_lock();
+
+if (is_staging_site()) {
+
+    //  Marks all WPCF7 forms as not spam if on staging sie
+    add_filter('wpcf7_spam', '__return_false');
+
+    //  Hooks into admin_init for code specific to the area on staging sites
+    add_action('admin_init', __NAMESPACE__ . '\staging_setup');
+    
+}
+
 function staging_setup(){
-
-    // Before performing checks, ensure there is a live site url, if not, assume this is the live site
-    set_duplicate_site_url_lock();
-
-    if (is_staging_site()) {
-        if( is_multisite()) {
-            update_domain_mapping();
-        }
+   
+    if( is_multisite()) {
+        update_domain_mapping();
     }
+
 }
 
 /**
