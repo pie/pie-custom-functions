@@ -198,7 +198,6 @@ function hide_plugins_from_side_bar()
     }
 }
 
-
 /**
  * Only allow access to the 'WPMU DEV' plugin item for Pie Admin
  * 
@@ -242,7 +241,10 @@ if (is_staging_site()) {
 function staging_setup(){
    
     if( is_multisite()) {
-        update_domain_mapping();
+        // Temporary fix to avoid issues with staging on multisite
+        if( strpos($_SERVER['HTTP_HOST'], 'staging.tempurl.host') !== false){
+            update_domain_mapping();
+        }
     }
 
 }
@@ -314,7 +316,11 @@ function is_staging_site() {
 
     // Gets both current site url and known live site url
     $pcf_current_site_url = get_option( 'siteurl' );
+<<<<<<< HEAD
     $pcf_live_site_url = get_option( 'pcf_siteurl' );
+=======
+    $pcf_live_site_url    = get_option( 'pcf_siteurl' );
+>>>>>>> fix/is-staging-multisite
 
     // Remove constant from saved live site url to produce accurate live site url
     $live_site_url = str_replace('_[pcf_site_url]_', '', $pcf_live_site_url);
