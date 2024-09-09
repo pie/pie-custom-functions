@@ -225,7 +225,7 @@ if (!empty($pie_admins)) {
  */
 
 
-// Before performing checks, ensure there is a live site url, if not, assume this is the live site
+// Run before checks always
 set_duplicate_site_url_lock();
 
 if (is_staging_site()) {
@@ -239,7 +239,7 @@ if (is_staging_site()) {
 }
 
 function staging_setup(){
-   
+
     if( is_multisite()) {
         // Temporary fix to avoid issues with staging on multisite
         if( strpos($_SERVER['HTTP_HOST'], 'staging.tempurl.host') !== false){
@@ -286,7 +286,8 @@ function update_domain_mapping(){
 
 /**
  * 
- *  Compares known live site url and curent url to check if this is a staging site
+ *  Before performing checks, ensure there is a live site url, if not, assume this is the live site
+ *  @return void    
  * 
  */
 
@@ -294,14 +295,25 @@ function update_domain_mapping(){
 function set_duplicate_site_url_lock() {
 
     // Add option does not overwrite options that are already set
-    add_option( 'pcf_siteurl', get_duplicate_site_lock_key() );
+    add_site_option( 'pcf_siteurl', get_duplicate_site_lock_key() );
 
 }
 
+/**
+ * 
+ * Grabs site or network url and inserts a constant to prevent S&R effects
+ * @return array|string
+ * 
+ */
+
 function get_duplicate_site_lock_key() {
 
-    // Grabs site url from current site
-    $site_url = get_site_url( 'current_wp_site' );
+    // Grabs site url from current site, or network url if used on multisite
+    if (is_multisite()){
+        $site_url = network_site_url();
+    } else {
+        $site_url = get_site_url( 'current_wp_site' );
+    }
 
     // Inserts constant into url to ensure no search and replace done to staging will affect it and returns the value
     return substr_replace(
@@ -312,11 +324,22 @@ function get_duplicate_site_lock_key() {
     );
 }
 
+/**
+ * 
+ * Checks stored site/network url with current site/network url to check staging status
+ * @return bool
+ * 
+ */
+
 function is_staging_site() {
 
-    // Gets both current site url and known live site url
-    $pcf_current_site_url = get_option( 'siteurl' );
-    $pcf_live_site_url    = get_option( 'pcf_siteurl' );
+    // Gets both current site url and known live site url (network url if multisite)
+    if (is_multisite()){
+        $pcf_current_site_url = network_site_url();
+    } else {
+        $pcf_current_site_url = get_site_option( 'siteurl' );
+    }
+    $pcf_live_site_url    = get_site_option( 'pcf_siteurl' );
 
     // Remove constant from saved live site url to produce accurate live site url
     $live_site_url = str_replace('_[pcf_site_url]_', '', $pcf_live_site_url);
