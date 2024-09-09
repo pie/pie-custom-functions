@@ -316,11 +316,7 @@ function is_staging_site() {
 
     // Gets both current site url and known live site url
     $pcf_current_site_url = get_option( 'siteurl' );
-<<<<<<< HEAD
-    $pcf_live_site_url = get_option( 'pcf_siteurl' );
-=======
     $pcf_live_site_url    = get_option( 'pcf_siteurl' );
->>>>>>> fix/is-staging-multisite
 
     // Remove constant from saved live site url to produce accurate live site url
     $live_site_url = str_replace('_[pcf_site_url]_', '', $pcf_live_site_url);
