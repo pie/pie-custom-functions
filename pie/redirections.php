@@ -23,7 +23,7 @@
 namespace PIE\Redirections;
 
 // Prevent direct access
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -32,7 +32,7 @@ if (!defined('ABSPATH')) {
  * 
  * Only processes front-end requests to avoid interfering with admin, AJAX, REST API, etc.
  */
-function handle_redirects() {
+function handle_redirects(): void {
     // Skip processing for admin area, AJAX, REST API, and CLI requests
     if ( is_admin() || wp_doing_ajax() || wp_is_json_request() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
         return;
@@ -68,7 +68,7 @@ function handle_redirects() {
     $redirect_rules = apply_filters( __NAMESPACE__ . '\filters\redirect_rules', array() );
 
     // Get all redirect rules - return early if none configured
-    if ( empty( $redirect_rules ) ) {
+    if ( ! isset( $redirect_rules ) || ! is_array( $redirect_rules ) || 0 === count( $redirect_rules ) ) {
         return;
     }
     
@@ -97,7 +97,7 @@ function handle_redirects() {
  * 
  * @return string The sanitized request path
  */
-function get_request_path() {
+function get_request_path(): string {
     // Use WordPress function to get request URI safely
     $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( $_SERVER['REQUEST_URI'] ) : '';
     
@@ -115,7 +115,7 @@ function get_request_path() {
  * @param string $pattern The regex pattern to match against
  * @return bool True if path matches pattern
  */
-function path_matches_pattern( $path, $pattern ) {
+function path_matches_pattern( string $path, string $pattern ): bool {
     // Handle both site root and subdirectory installations
     $site_path = wp_parse_url( home_url(), PHP_URL_PATH );
     $site_path = rtrim( $site_path ?: '', '/' );
@@ -139,7 +139,7 @@ function path_matches_pattern( $path, $pattern ) {
  * @param array $rule The redirect rule configuration
  * @return bool True if user should be redirected
  */
-function should_redirect_user( $rule ) {
+function should_redirect_user( array $rule ): bool {
     $condition = isset( $rule['condition'] ) ? $rule['condition'] : 'not_admin';
     
     switch ( $condition ) {
@@ -248,7 +248,7 @@ function perform_redirect( array $rule, string $request_path ): void {
  * @param string $to_url The redirect destination
  * @param array $rule The rule that triggered the redirect
  */
-function log_redirect( $from_path, $to_url, $rule ) {
+function log_redirect( string $from_path, string $to_url, array $rule ): void {
         $description = isset( $rule['description'] ) ? $rule['description'] : 'Custom rule';
         error_log( sprintf(
             'PIE Redirections: [%s] Redirected "%s" to "%s" for user %s',
@@ -265,7 +265,7 @@ function log_redirect( $from_path, $to_url, $rule ) {
  * @param string $path The path being checked
  * @param array $rules All redirect rules
  */
-function debug_redirect_attempts( $path, $rules ) {
+function debug_redirect_attempts( string $path, array $rules ): void {
     error_log( sprintf(
         'PIE Redirections DEBUG: Checking path "%s" against %d rules',
         $path,
