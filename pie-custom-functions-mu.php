@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: PIE Hosting Companion (MU)
- * Description: Required Functionality for PIE Hosting
+ * Description: Essential PIE hosting functionality including URL redirections system, plugin visibility management, multisite user role controls, automatic user role assignment for @pie.co.de emails, and staging domain mapping for multisite networks.
  * Author: The team at PIE
  * Author URI: https://pie.co.de
  * Version: 1.3.3
@@ -19,6 +19,8 @@ namespace Pie\CustomFunctionsMUPlugin;
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
+include_once plugin_dir_path( __FILE__ ) . 'pie/redirections.php';
 
 // Add custom user role for Pie Admin
 function add_pie_admin_role()

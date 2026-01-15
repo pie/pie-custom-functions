@@ -25,6 +25,7 @@ if (!defined('ABSPATH')) {
 register_activation_hook(__FILE__ , __NAMESPACE__ . '\pie_custom_functions_init');
 add_action('plugins_loaded', __NAMESPACE__ . '\pie_custom_functions_load_composer');
 add_action('plugins_loaded', __NAMESPACE__ . '\update_check');
+add_filter('all_plugins', __NAMESPACE__ . '\hide_pie_custom_functions_mu_plugin_from_plugins_list');
 
 /**
  * Load Composer autoloader
@@ -56,15 +57,52 @@ function pie_custom_functions_init(){
     update_option('pie_custom_functions_version', get_plugin_data(__FILE__)['Version']);
 
     $local_mu_plugin_file = plugin_dir_path(__FILE__) . 'pie-custom-functions-mu.php';
+    $local_mu_plugin_directory = plugin_dir_path(__FILE__) . 'pie';
 
-    // Set the path for the MU plugin file
+    // Set the paths for the MU plugin file and pie directory
 
     if(defined('WPMU_PLUGIN_DIR')){
-        $mu_plugin_destination_file = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
+        $destination_mu_plugin_file = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
+        $destination_mu_plugin_directory = WPMU_PLUGIN_DIR . '/pie';
     }
 
+    // Copy the MU plugin file
+    copy($local_mu_plugin_file, $destination_mu_plugin_file);
+    
+    // Copy the pie directory
+    pie_copy_directory_recursive($local_mu_plugin_directory, $destination_mu_plugin_directory);
+}
 
-    rename($local_mu_plugin_file, $mu_plugin_destination_file);
+/**
+ * Recursively copy a directory and all its contents
+ *
+ * @param string $source The source directory to copy from
+ * @param string $destination The destination directory to copy to
+ * @return bool True on success, false on failure
+ */
+function pie_copy_directory_recursive($source, $destination) {
+    if (!is_dir($source)) {
+        return false;
+    }
+    
+    if (!mkdir($destination, 0755, true) && !is_dir($destination)) {
+        return false;
+    }
+    
+    $files = array_diff(scandir($source), array('.', '..'));
+    
+    foreach ($files as $file) {
+        $source_path = $source . '/' . $file;
+        $dest_path = $destination . '/' . $file;
+        
+        if (is_dir($source_path)) {
+            pie_copy_directory_recursive($source_path, $dest_path);
+        } else {
+            copy($source_path, $dest_path);
+        }
+    }
+    
+    return true;
 }
 
 /**
@@ -87,3 +125,16 @@ function update_check(){
     }
 }
 
+/**
+ * Hide the PIE Custom Functions MU plugin from the plugins list for all users
+ * 
+ * @param array $plugins
+ * @return array $plugins
+ */
+function hide_pie_custom_functions_mu_plugin_from_plugins_list($plugins) {
+    // Hide the MU plugin file if it shows up in the list
+    if (isset($plugins['pie-custom-functions/pie-custom-functions-mu.php'])) {
+        unset($plugins['pie-custom-functions/pie-custom-functions-mu.php']);
+    }
+    return $plugins;
+}
