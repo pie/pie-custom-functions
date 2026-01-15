@@ -66,10 +66,13 @@ function pie_custom_functions_init(){
         $destination_mu_plugin_directory = WPMU_PLUGIN_DIR . '/pie';
     }
 
-    // Copy the MU plugin file
+    // Copy the MU plugin file (overwrites existing)
     copy( $local_mu_plugin_file, $destination_mu_plugin_file );
     
-    // Copy the pie directory
+    // Copy the pie directory (remove existing first for clean update)
+    if ( is_dir( $destination_mu_plugin_directory ) ) {
+        pie_remove_directory_recursive( $destination_mu_plugin_directory );
+    }
     pie_copy_directory_recursive( $local_mu_plugin_directory, $destination_mu_plugin_directory );
 }
 
@@ -103,6 +106,31 @@ function pie_copy_directory_recursive( $source, $destination ) {
     }
     
     return true;
+}
+
+/**
+ * Recursively remove a directory and all its contents
+ *
+ * @param string $dir The directory to remove
+ * @return bool True on success, false on failure
+ */
+function pie_remove_directory_recursive( $dir ) {
+    if ( ! is_dir( $dir ) ) {
+        return false;
+    }
+    
+    $files = array_diff( scandir( $dir ), array( '.', '..' ) );
+    
+    foreach ( $files as $file ) {
+        $path = $dir . '/' . $file;
+        if ( is_dir( $path ) ) {
+            pie_remove_directory_recursive( $path );
+        } else {
+            unlink( $path );
+        }
+    }
+    
+    return rmdir( $dir );
 }
 
 /**
