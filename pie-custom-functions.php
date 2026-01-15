@@ -29,8 +29,12 @@ add_action( 'plugins_loaded', __NAMESPACE__ . '\update_check' );
 add_filter( 'all_plugins', __NAMESPACE__ . '\hide_pie_custom_functions_mu_plugin_from_plugins_list' );
 
 /**
- * Load Composer autoloader
+ * Load Composer autoloader and initialize update checker
+ * 
+ * Sets up the Composer autoloader and configures the plugin update checker
+ * to monitor for new versions from the PIE GitHub repository.
  *
+ * @since 1.0.0
  * @return void
  */
 function pie_custom_functions_load_composer(): void {
@@ -44,14 +48,19 @@ function pie_custom_functions_load_composer(): void {
 }
 
 /**
- * This function handles copying the MU plugin file to the correct location and updating the version number
- * in the database.
+ * Initialize and activate the PIE Custom Functions plugin
+ * 
+ * Handles copying the MU plugin file and pie directory to the correct locations
+ * during plugin activation. Updates the version number in the database and
+ * performs comprehensive error handling with cleanup on failure.
  *
+ * @since 1.0.0
+ * @throws WP_Error If file operations fail
  * @return void
  */
 function pie_custom_functions_init(): void {
 
-    if( ! function_exists( 'get_plugin_data' ) ){
+    if ( ! function_exists( 'get_plugin_data' ) ) {
         require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
     }
 
@@ -61,7 +70,7 @@ function pie_custom_functions_init(): void {
     $local_mu_plugin_directory = plugin_dir_path( __FILE__ ) . 'pie';
 
     // Set the paths for the MU plugin file and pie directory
-    if( defined( 'WPMU_PLUGIN_DIR' ) ){
+    if ( defined( 'WPMU_PLUGIN_DIR' ) ) {
         $destination_mu_plugin_file = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
         $destination_mu_plugin_directory = WPMU_PLUGIN_DIR . '/pie';
     }
@@ -77,7 +86,7 @@ function pie_custom_functions_init(): void {
     }
     
     // Copy the pie directory (WordPress core function handles overwriting)
-    if( ! function_exists( 'copy_dir' ) ){
+    if ( ! function_exists( 'copy_dir' ) ) {
         require_once( ABSPATH . 'wp-admin/includes/file.php' );
     }
     
@@ -99,30 +108,39 @@ function pie_custom_functions_init(): void {
 }
 
 /**
- * After plugins have loaded check if the plugin has been updated
- * If it has been updated then run the init function
+ * Check for plugin updates and reinitialize if necessary
  * 
+ * Compares the stored version number with the current plugin version.
+ * If an update is detected, triggers the initialization process to
+ * ensure MU plugin files are updated.
+ * 
+ * @since 1.0.0
  * @return void
  */
 function update_check(): void {
     
-    if( ! function_exists( 'get_plugin_data' ) ){
+    if ( ! function_exists( 'get_plugin_data' ) ) {
         require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
     }
 
     $current_version = get_option( 'pie_custom_functions_version' );
     $new_version = get_plugin_data( __FILE__ )['Version'];
 
-    if( version_compare( $current_version, $new_version, '<' ) ){
+    if ( version_compare( $current_version, $new_version, '<' ) ) {
         pie_custom_functions_init();
     }
 }
 
 /**
- * Hide the PIE Custom Functions MU plugin from the plugins list for all users
+ * Hide the PIE Custom Functions MU plugin from the plugins list
  * 
- * @param array $plugins
- * @return array $plugins
+ * Removes the MU plugin from the plugins page to prevent user confusion
+ * and accidental activation. The MU plugin should remain hidden from
+ * all users regardless of their role.
+ * 
+ * @since 1.0.0
+ * @param array $plugins Array of all installed plugins
+ * @return array Modified plugins array with MU plugin removed
  */
 function hide_pie_custom_functions_mu_plugin_from_plugins_list( array $plugins ): array {
     // Hide the MU plugin file if it shows up in the list
