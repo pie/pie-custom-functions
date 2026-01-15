@@ -38,11 +38,42 @@ function handle_redirects() {
         return;
     }
     
+    /**
+     * Filters the array of redirect rules.
+     *
+     * Allows plugins and themes to add custom redirect rules to the PIE Redirections system.
+     * Each rule should be an associative array containing pattern, destination, condition, and status_code.
+     *
+     * @since 1.0.0
+     *
+     * @param array $rules {
+     *     Array of redirect rule configurations.
+     *
+     *     @type array $rule {
+     *         Individual redirect rule configuration.
+     *
+     *         @type string $pattern      Required. Regex pattern to match against the request path.
+     *                                   Should be a valid PHP regex with delimiters (e.g., '#^/old-path/?$#').
+     *         @type string $destination  Required. Destination path or full URL to redirect to.
+     *                                   Can be relative path (e.g., '/new-path/') or absolute URL.
+     *         @type string $condition    Optional. Condition for when to apply the redirect.
+     *                                   Accepts 'always', 'not_admin', 'not_logged_in', 'logged_in', or callable.
+     *                                   Default 'not_admin'.
+     *         @type int    $status_code  Optional. HTTP status code for the redirect.
+     *                                   Accepts 301 (permanent) or 302 (temporary). Default 302.
+     *         @type string $description  Optional. Human-readable description for debugging purposes.
+     *     }
+     * }
+     */
+    $redirect_rules = apply_filters( __NAMESPACE__ . '\filters\redirect_rules', array() );
+
+    // Get all redirect rules - return early if none configured
+    if ( empty( $redirect_rules ) ) {
+        return;
+    }
+    
     // Get the current request path
     $request_path = get_request_path();
-    
-    // Get all redirect rules
-    $redirect_rules = get_redirect_rules();
     
     // Debug logging
 
@@ -59,30 +90,6 @@ function handle_redirects() {
             }
         }
     }
-}
-
-/**
- * Get all configured redirect rules
- * 
- * @return array Array of redirect rule configurations
- */
-function get_redirect_rules() {
-
-    /**
-     * Filter to allow adding custom redirect rules
-     * 
-     * @param array $rules Array of redirect rule configurations
-     * 
-     * Rule format:
-     * [
-     *     'pattern' => '#regex#',           // Regex pattern to match against path
-     *     'destination' => '/target/',      // Destination path or URL
-     *     'condition' => 'not_admin',       // Condition: 'not_admin', 'not_logged_in', 'always', or custom callable
-     *     'status_code' => 302,             // HTTP status code (301, 302, etc.)
-     *     'description' => 'Rule desc'      // Optional description for debugging
-     * ]
-     */
-    return apply_filters( __NAMESPACE__ . '\filters\redirect_rules', array() );
 }
 
 /**
@@ -177,6 +184,27 @@ function perform_redirect( $rule, $request_path ) {
     }
     
     // Allow filtering of the redirect URL
+    /**
+     * Filters the redirect URL before performing the redirect.
+     *
+     * Allows plugins and themes to modify the destination URL before the redirect is executed.
+     * This can be used to add query parameters, change domains, or apply custom logic
+     * to the redirect destination.
+     *
+     * @since 1.0.0
+     *
+     * @param string $redirect_url  The redirect URL that will be used for wp_redirect().
+     * @param array  $rule {
+     *     The redirect rule configuration that triggered this redirect.
+     *
+     *     @type string $pattern      Regex pattern that matched the request path.
+     *     @type string $destination  Original destination from the rule configuration.
+     *     @type string $condition    Condition that was evaluated for this redirect.
+     *     @type int    $status_code  HTTP status code for the redirect.
+     *     @type string $description  Optional description for debugging purposes.
+     * }
+     * @param string $request_path  The original request path that triggered the redirect.
+     */
     $redirect_url = apply_filters( __NAMESPACE__ . '\filters\redirect_url', $redirect_url, $rule, $request_path );
     
     // Validate the redirect URL for security
