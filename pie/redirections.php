@@ -31,8 +31,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Handle all configured redirects for front-end requests
  * 
  * Processes redirect rules from the configured filter and applies them
- * to the current request. Only processes front-end requests to avoid
- * interfering with admin area, AJAX, REST API, or CLI operations.
+ * to the current request. Validates rule structure and handles errors
+ * gracefully. Only processes front-end requests to avoid interfering 
+ * with admin area, AJAX, REST API, or CLI operations.
  * 
  * @since 1.0.0
  * @return void
@@ -126,8 +127,10 @@ function handle_redirects(): void {
 /**
  * Get the sanitized and normalized request path
  * 
- * Extracts and sanitizes the request path from the current request URI.
- * Handles URL parsing and removes trailing slashes for consistent processing.
+ * Extracts and sanitizes the request path from the current request URI
+ * using URL-specific sanitization that preserves URL structure, encoded
+ * characters, and query parameters. Handles URL parsing and removes
+ * trailing slashes for consistent processing.
  * 
  * @since 1.0.0
  * @return string The sanitized request path without trailing slash
@@ -147,13 +150,14 @@ function get_request_path(): string {
  * Check if the current path matches the given regex pattern
  * 
  * Handles both site root and subdirectory WordPress installations
- * by normalizing the path before pattern matching. Ensures consistent
- * matching behavior regardless of installation type.
+ * by normalizing the path before pattern matching. Validates regex
+ * pattern structure and handles compilation errors gracefully.
+ * Ensures consistent matching behavior regardless of installation type.
  * 
  * @since 1.0.0
  * @param string $path The request path to check
  * @param string $pattern The regex pattern to match against (with delimiters)
- * @return bool True if path matches pattern, false otherwise
+ * @return bool True if path matches pattern, false for invalid patterns or no match
  */
 function path_matches_pattern( string $path, string $pattern ): bool {
     // Handle both site root and subdirectory installations
