@@ -5,6 +5,7 @@
  * Author: The team at PIE
  * Author URI: https://pie.co.de
  * Version: 1.3.3
+ * Requires PHP: 8.0
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: pie-custom-functions
@@ -32,7 +33,7 @@ add_filter( 'all_plugins', __NAMESPACE__ . '\hide_pie_custom_functions_mu_plugin
  *
  * @return void
  */
-function pie_custom_functions_load_composer(){
+function pie_custom_functions_load_composer(): void {
     require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
 
     $update_checker = PucFactory::buildUpdateChecker(
@@ -48,7 +49,7 @@ function pie_custom_functions_load_composer(){
  *
  * @return void
  */
-function pie_custom_functions_init(){
+function pie_custom_functions_init(): void {
 
     if( ! function_exists( 'get_plugin_data' ) ){
         require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
@@ -60,7 +61,6 @@ function pie_custom_functions_init(){
     $local_mu_plugin_directory = plugin_dir_path( __FILE__ ) . 'pie';
 
     // Set the paths for the MU plugin file and pie directory
-
     if( defined( 'WPMU_PLUGIN_DIR' ) ){
         $destination_mu_plugin_file = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
         $destination_mu_plugin_directory = WPMU_PLUGIN_DIR . '/pie';
@@ -69,68 +69,11 @@ function pie_custom_functions_init(){
     // Copy the MU plugin file (overwrites existing)
     copy( $local_mu_plugin_file, $destination_mu_plugin_file );
     
-    // Copy the pie directory (remove existing first for clean update)
-    if ( is_dir( $destination_mu_plugin_directory ) ) {
-        pie_remove_directory_recursive( $destination_mu_plugin_directory );
+    // Copy the pie directory (WordPress core function handles overwriting)
+    if( ! function_exists( 'copy_dir' ) ){
+        require_once( ABSPATH . 'wp-admin/includes/file.php' );
     }
-    pie_copy_directory_recursive( $local_mu_plugin_directory, $destination_mu_plugin_directory );
-}
-
-/**
- * Recursively copy a directory and all its contents
- *
- * @param string $source The source directory to copy from
- * @param string $destination The destination directory to copy to
- * @return bool True on success, false on failure
- */
-function pie_copy_directory_recursive( $source, $destination ) {
-    if ( ! is_dir( $source ) ) {
-        return false;
-    }
-    
-    if ( ! mkdir( $destination, 0755, true ) && ! is_dir( $destination ) ) {
-        return false;
-    }
-    
-    $files = array_diff( scandir( $source ), array( '.', '..' ) );
-    
-    foreach ( $files as $file ) {
-        $source_path = $source . '/' . $file;
-        $dest_path = $destination . '/' . $file;
-        
-        if ( is_dir( $source_path ) ) {
-            pie_copy_directory_recursive( $source_path, $dest_path );
-        } else {
-            copy( $source_path, $dest_path );
-        }
-    }
-    
-    return true;
-}
-
-/**
- * Recursively remove a directory and all its contents
- *
- * @param string $dir The directory to remove
- * @return bool True on success, false on failure
- */
-function pie_remove_directory_recursive( $dir ) {
-    if ( ! is_dir( $dir ) ) {
-        return false;
-    }
-    
-    $files = array_diff( scandir( $dir ), array( '.', '..' ) );
-    
-    foreach ( $files as $file ) {
-        $path = $dir . '/' . $file;
-        if ( is_dir( $path ) ) {
-            pie_remove_directory_recursive( $path );
-        } else {
-            unlink( $path );
-        }
-    }
-    
-    return rmdir( $dir );
+    copy_dir( $local_mu_plugin_directory, $destination_mu_plugin_directory );
 }
 
 /**
@@ -139,7 +82,7 @@ function pie_remove_directory_recursive( $dir ) {
  * 
  * @return void
  */
-function update_check(){
+function update_check(): void {
     
     if( ! function_exists( 'get_plugin_data' ) ){
         require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
@@ -159,7 +102,7 @@ function update_check(){
  * @param array $plugins
  * @return array $plugins
  */
-function hide_pie_custom_functions_mu_plugin_from_plugins_list( $plugins ) {
+function hide_pie_custom_functions_mu_plugin_from_plugins_list( array $plugins ): array {
     // Hide the MU plugin file if it shows up in the list
     if ( isset( $plugins['pie-custom-functions/pie-custom-functions-mu.php'] ) ) {
         unset( $plugins['pie-custom-functions/pie-custom-functions-mu.php'] );

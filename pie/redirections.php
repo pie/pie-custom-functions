@@ -156,12 +156,22 @@ function should_redirect_user( $rule ) {
             return is_user_logged_in();
             
         default:
-            // Allow custom callable conditions
+            // Allow custom callable conditions with error handling
             if ( is_callable( $condition ) ) {
-                return call_user_func( $condition, $rule );
+                try {
+                    return (bool) call_user_func( $condition, $rule );
+                } catch ( \Throwable $throwable ) {
+                    error_log(
+                        sprintf(
+                            '[PIE Redirections] Condition callback error for rule: %s. Error: %s',
+                            isset( $rule['description'] ) ? (string) $rule['description'] : 'N/A',
+                            $throwable->getMessage()
+                        )
+                    );
+                }
             }
             
-            // Default to not redirecting if condition is unknown
+            // Default to not redirecting if condition is unknown or failed
             return false;
     }
 }
@@ -183,7 +193,6 @@ function perform_redirect( $rule, $request_path ) {
         $redirect_url = $destination;
     }
     
-    // Allow filtering of the redirect URL
     /**
      * Filters the redirect URL before performing the redirect.
      *

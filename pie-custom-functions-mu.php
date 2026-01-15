@@ -6,6 +6,7 @@
  * Author: The team at PIE
  * Author URI: https://pie.co.de
  * Version: 1.3.3
+ * Requires PHP: 8.0
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: pie-custom-functions
@@ -18,6 +19,22 @@ namespace Pie\CustomFunctionsMUPlugin;
 //exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
+}
+
+// Require PHP 8.0 or higher
+if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
+    add_action( 'admin_notices', function() {
+        echo '<div class="notice notice-error"><p>';
+        echo sprintf(
+            /* translators: 1: Plugin name, 2: Required PHP version, 3: Current PHP version */
+            __( '%1$s requires PHP %2$s or higher. You are running PHP %3$s.', 'pie-custom-functions' ),
+            '<strong>PIE Hosting Companion (MU)</strong>',
+            '8.0',
+            PHP_VERSION
+        );
+        echo '</p></div>';
+    } );
+    return;
 }
 
 include_once plugin_dir_path( __FILE__ ) . 'pie/redirections.php';
