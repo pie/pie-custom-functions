@@ -182,9 +182,20 @@ function should_redirect_user( $rule ) {
  * @param array $rule The redirect rule configuration
  * @param string $request_path The original request path
  */
-function perform_redirect( $rule, $request_path ) {
+function perform_redirect( array $rule, string $request_path ): void {
     $destination = isset( $rule['destination'] ) ? $rule['destination'] : '/';
     $status_code = isset( $rule['status_code'] ) ? $rule['status_code'] : 302;
+    
+    // Validate status code - only allow valid redirect codes
+    $valid_status_codes = [ 301, 302, 303, 307, 308 ];
+    if ( ! in_array( $status_code, $valid_status_codes, true ) ) {
+        error_log( sprintf(
+            '[PIE Redirections] Invalid status code %s for rule: %s. Using 302 instead.',
+            $status_code,
+            isset( $rule['description'] ) ? $rule['description'] : 'N/A'
+        ) );
+        $status_code = 302;
+    }
     
     // Convert relative paths to full URLs
     if ( str_starts_with( $destination, '/' ) ) {

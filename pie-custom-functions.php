@@ -67,13 +67,35 @@ function pie_custom_functions_init(): void {
     }
 
     // Copy the MU plugin file (overwrites existing)
-    copy( $local_mu_plugin_file, $destination_mu_plugin_file );
+    if ( ! copy( $local_mu_plugin_file, $destination_mu_plugin_file ) ) {
+        error_log( '[PIE Custom Functions] Failed to copy MU plugin file to: ' . $destination_mu_plugin_file );
+        wp_die( 
+            __( 'PIE Hosting Companion activation failed: Could not copy MU plugin file. Please check file permissions.', 'pie-custom-functions' ),
+            __( 'Plugin Activation Error', 'pie-custom-functions' ),
+            array( 'back_link' => true )
+        );
+    }
     
     // Copy the pie directory (WordPress core function handles overwriting)
     if( ! function_exists( 'copy_dir' ) ){
         require_once( ABSPATH . 'wp-admin/includes/file.php' );
     }
-    copy_dir( $local_mu_plugin_directory, $destination_mu_plugin_directory );
+    
+    $copy_result = copy_dir( $local_mu_plugin_directory, $destination_mu_plugin_directory );
+    if ( is_wp_error( $copy_result ) || ! $copy_result ) {
+        // Clean up the MU plugin file if directory copy failed
+        if ( file_exists( $destination_mu_plugin_file ) ) {
+            unlink( $destination_mu_plugin_file );
+        }
+        
+        $error_message = is_wp_error( $copy_result ) ? $copy_result->get_error_message() : 'Unknown error';
+        error_log( '[PIE Custom Functions] Failed to copy pie directory: ' . $error_message );
+        wp_die( 
+            __( 'PIE Hosting Companion activation failed: Could not copy pie directory. Please check file permissions.', 'pie-custom-functions' ) . ' ' . $error_message,
+            __( 'Plugin Activation Error', 'pie-custom-functions' ),
+            array( 'back_link' => true )
+        );
+    }
 }
 
 /**
