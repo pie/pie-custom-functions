@@ -69,11 +69,19 @@ function pie_custom_functions_init(): void {
     $local_mu_plugin_file = plugin_dir_path( __FILE__ ) . 'pie-custom-functions-mu.php';
     $local_mu_plugin_directory = plugin_dir_path( __FILE__ ) . 'pie';
 
-    // Set the paths for the MU plugin file and pie directory
-    if ( defined( 'WPMU_PLUGIN_DIR' ) ) {
-        $destination_mu_plugin_file = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
-        $destination_mu_plugin_directory = WPMU_PLUGIN_DIR . '/pie';
+    // Ensure MU plugin directory is available
+    if ( ! defined( 'WPMU_PLUGIN_DIR' ) ) {
+        error_log( '[PIE Custom Functions] WPMU_PLUGIN_DIR not defined - MU plugins not supported' );
+        wp_die( 
+            __( 'PIE Hosting Companion activation failed: MU plugins directory not available. Please contact your hosting provider.', 'pie-custom-functions' ),
+            __( 'Plugin Activation Error', 'pie-custom-functions' ),
+            array( 'back_link' => true )
+        );
     }
+
+    // Set the paths for the MU plugin file and pie directory
+    $destination_mu_plugin_file = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
+    $destination_mu_plugin_directory = WPMU_PLUGIN_DIR . '/pie';
 
     // Copy the MU plugin file (overwrites existing)
     if ( ! copy( $local_mu_plugin_file, $destination_mu_plugin_file ) ) {
