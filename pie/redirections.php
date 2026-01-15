@@ -107,7 +107,7 @@ function handle_redirects(): void {
  */
 function get_request_path(): string {
     // Use WordPress function to get request URI safely
-    $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( $_SERVER['REQUEST_URI'] ) : '';
+    $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
     
     // Parse and clean the path
     $path = wp_parse_url( $request_uri, PHP_URL_PATH );
@@ -143,7 +143,32 @@ function path_matches_pattern( string $path, string $pattern ): bool {
         $path = '/' . $path;
     }
     
-    return preg_match( $pattern, $path );
+    // Validate regex pattern before use
+    if ( ! is_string( $pattern ) || empty( $pattern ) ) {
+        error_log( sprintf(
+            '[PIE Redirections] Invalid pattern type or empty pattern: %s',
+            var_export( $pattern, true )
+        ) );
+        return false;
+    }
+    
+    // Test pattern validity with a simple string first
+    $test_result = preg_match( $pattern, '/test' );
+    
+    // Check for regex compilation errors
+    if ( false === $test_result ) {
+        error_log( sprintf(
+            '[PIE Redirections] Invalid regex pattern: %s. Error: %s',
+            $pattern,
+            preg_last_error_msg()
+        ) );
+        return false;
+    }
+    
+    // Now safely perform the actual match
+    $result = preg_match( $pattern, $path );
+    
+    return (bool) $result;
 }
 
 /**
