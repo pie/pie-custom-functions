@@ -28,9 +28,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Handle all configured redirects
+ * Handle all configured redirects for front-end requests
  * 
- * Only processes front-end requests to avoid interfering with admin, AJAX, REST API, etc.
+ * Processes redirect rules from the configured filter and applies them
+ * to the current request. Only processes front-end requests to avoid
+ * interfering with admin area, AJAX, REST API, or CLI operations.
+ * 
+ * @since 1.0.0
+ * @return void
  */
 function handle_redirects(): void {
     // Skip processing for admin area, AJAX, REST API, and CLI requests
@@ -76,7 +81,6 @@ function handle_redirects(): void {
     $request_path = get_request_path();
     
     // Debug logging
-
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
         debug_redirect_attempts( $request_path, $redirect_rules );
     }
@@ -93,9 +97,13 @@ function handle_redirects(): void {
 }
 
 /**
- * Get the sanitized request path
+ * Get the sanitized and normalized request path
  * 
- * @return string The sanitized request path
+ * Extracts and sanitizes the request path from the current request URI.
+ * Handles URL parsing and removes trailing slashes for consistent processing.
+ * 
+ * @since 1.0.0
+ * @return string The sanitized request path without trailing slash
  */
 function get_request_path(): string {
     // Use WordPress function to get request URI safely
@@ -109,11 +117,16 @@ function get_request_path(): string {
 }
 
 /**
- * Check if the current path matches the given pattern
+ * Check if the current path matches the given regex pattern
  * 
+ * Handles both site root and subdirectory WordPress installations
+ * by normalizing the path before pattern matching. Ensures consistent
+ * matching behavior regardless of installation type.
+ * 
+ * @since 1.0.0
  * @param string $path The request path to check
- * @param string $pattern The regex pattern to match against
- * @return bool True if path matches pattern
+ * @param string $pattern The regex pattern to match against (with delimiters)
+ * @return bool True if path matches pattern, false otherwise
  */
 function path_matches_pattern( string $path, string $pattern ): bool {
     // Handle both site root and subdirectory installations
@@ -136,8 +149,17 @@ function path_matches_pattern( string $path, string $pattern ): bool {
 /**
  * Determine if the current user should be redirected based on rule condition
  * 
- * @param array $rule The redirect rule configuration
- * @return bool True if user should be redirected
+ * Evaluates the condition specified in the redirect rule to determine
+ * if the current user should be redirected. Supports built-in conditions
+ * and custom callable conditions with comprehensive error handling.
+ * 
+ * @since 1.0.0
+ * @param array $rule {
+ *     The redirect rule configuration.
+ *     @type string|callable $condition Condition to evaluate: 'always', 'not_admin',
+ *                                     'not_logged_in', 'logged_in', or callable.
+ * }
+ * @return bool True if user should be redirected, false otherwise
  */
 function should_redirect_user( array $rule ): bool {
     $condition = isset( $rule['condition'] ) ? $rule['condition'] : 'not_admin';
@@ -179,8 +201,19 @@ function should_redirect_user( array $rule ): bool {
 /**
  * Perform the redirect based on rule configuration
  * 
- * @param array $rule The redirect rule configuration
- * @param string $request_path The original request path
+ * Executes the actual redirect with proper URL validation, status code
+ * validation, and comprehensive error handling. Supports both relative
+ * and absolute destination URLs.
+ * 
+ * @since 1.0.0
+ * @param array $rule {
+ *     The redirect rule configuration.
+ *     @type string $destination  Destination path or URL to redirect to.
+ *     @type int    $status_code  HTTP status code (301, 302, 303, 307, 308).
+ *     @type string $description  Optional description for debugging.
+ * }
+ * @param string $request_path The original request path that triggered redirect
+ * @return void This function performs redirect and exits
  */
 function perform_redirect( array $rule, string $request_path ): void {
     $destination = isset( $rule['destination'] ) ? $rule['destination'] : '/';
@@ -231,7 +264,6 @@ function perform_redirect( array $rule, string $request_path ): void {
     $redirect_url = wp_validate_redirect( $redirect_url, home_url() );
     
     // Log the redirect if debugging is enabled
-
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
         log_redirect( $request_path, $redirect_url, $rule );
     }
@@ -242,11 +274,20 @@ function perform_redirect( array $rule, string $request_path ): void {
 }
 
 /**
- * Log redirect events for debugging (only in WP_DEBUG mode)
+ * Log redirect events for debugging purposes
  * 
- * @param string $from_path The original path
- * @param string $to_url The redirect destination
- * @param array $rule The rule that triggered the redirect
+ * Records redirect activity to the debug log. This function performs
+ * unconditional logging - DEBUG mode checks should be handled by the caller.
+ * Includes user context and rule information for troubleshooting.
+ * 
+ * @since 1.0.0
+ * @param string $from_path The original request path that was redirected
+ * @param string $to_url The redirect destination URL
+ * @param array $rule {
+ *     The rule configuration that triggered the redirect.
+ *     @type string $description Optional description for identification.
+ * }
+ * @return void
  */
 function log_redirect( string $from_path, string $to_url, array $rule ): void {
         $description = isset( $rule['description'] ) ? $rule['description'] : 'Custom rule';
@@ -260,10 +301,17 @@ function log_redirect( string $from_path, string $to_url, array $rule ): void {
 }
 
 /**
- * Debug function to log all redirect attempts (only in WP_DEBUG mode)
+ * Debug function to log all redirect rule evaluation attempts
  * 
- * @param string $path The path being checked
- * @param array $rules All redirect rules
+ * Provides detailed logging of redirect rule processing for troubleshooting.
+ * This function performs unconditional logging - DEBUG mode checks should
+ * be handled by the caller. Shows pattern matching and condition evaluation
+ * for troubleshooting redirect configurations.
+ * 
+ * @since 1.0.0
+ * @param string $path The request path being evaluated
+ * @param array $rules Array of all redirect rules to check
+ * @return void
  */
 function debug_redirect_attempts( string $path, array $rules ): void {
     error_log( sprintf(
@@ -287,5 +335,13 @@ function debug_redirect_attempts( string $path, array $rules ): void {
     }
 }
 
-// Initialize the redirections handler on 'parse_request' hook (runs very early, before query setup to prevent the Events Calendar from taking over)
+/**
+ * Initialize the redirections handler
+ * 
+ * Registers the redirect handler on the 'parse_request' hook with priority 1
+ * to run very early in the WordPress request lifecycle, before query setup
+ * and before other plugins like Events Calendar can interfere.
+ * 
+ * @since 1.0.0
+ */
 add_action( 'parse_request', __NAMESPACE__ . '\handle_redirects', 1 );
