@@ -86,7 +86,34 @@ function handle_redirects(): void {
     }
 
     // Process each redirect rule
-    foreach ( $redirect_rules as $rule ) {
+    foreach ( $redirect_rules as $index => $rule ) {
+        // Validate rule structure
+        if ( ! is_array( $rule ) ) {
+            error_log( sprintf(
+                '[PIE Redirections] Invalid rule at index %d: expected array, got %s',
+                $index,
+                gettype( $rule )
+            ) );
+            continue;
+        }
+        
+        // Check required keys
+        if ( ! isset( $rule['pattern'] ) ) {
+            error_log( sprintf(
+                '[PIE Redirections] Missing required "pattern" key in rule at index %d',
+                $index
+            ) );
+            continue;
+        }
+        
+        if ( ! isset( $rule['destination'] ) ) {
+            error_log( sprintf(
+                '[PIE Redirections] Missing required "destination" key in rule at index %d',
+                $index
+            ) );
+            continue;
+        }
+        
         if ( path_matches_pattern( $request_path, $rule['pattern'] ) ) {
             if ( should_redirect_user( $rule ) ) {
                 perform_redirect( $rule, $request_path );
