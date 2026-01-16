@@ -175,7 +175,7 @@ function path_matches_pattern( string $path, string $pattern ): bool {
     }
     
     // Validate regex pattern before use
-    if ( ! is_string( $pattern ) || empty( $pattern ) ) {
+    if ( ! is_string( $pattern ) || '' === $pattern ) {
         error_log( sprintf(
             '[PIE Redirections] Invalid pattern type or empty pattern: %s',
             var_export( $pattern, true )
