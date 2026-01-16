@@ -284,9 +284,10 @@ $users = get_users( array(
     'role' => 'pie_admin'
 ) );
 
+// wp_list_pluck always returns an array
 $pie_admins = wp_list_pluck( $users, 'ID' );
 
-if ( ! empty( $pie_admins ) ) {
+if ( count( $pie_admins ) > 0 ) {
     define( 'WPMUDEV_LIMIT_TO_USER', implode( ',', $pie_admins ) );
 }
 
