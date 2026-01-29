@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] 2026-01-29 
+
 ## [1.3.3] 2024-09-09 
 - Fix: multisite staging issue with new is staging check
 
