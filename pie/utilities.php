@@ -2,6 +2,8 @@
 
 namespace Pie\Utilities;
 
+use function Pie\CustomFunctionsMUPlugin\is_pie_admin;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }

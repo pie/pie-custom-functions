@@ -16,6 +16,8 @@
 
 namespace Pie\CustomFunctionsMUPlugin;
 
+use function Pie\Utilities\pie_hide_plugin;
+
 //exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
