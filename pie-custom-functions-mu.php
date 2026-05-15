@@ -254,29 +254,6 @@ function is_pie_admin( int $user_id = 0 ): bool
 }
 
 /**
- * Hide Hummingbird admin menu from non-Pie admin users
- *
- * Hummingbird is a performance/caching tool managed by PIE support staff.
- * Regular site users should not see or interact with it directly; the menu
- * is removed for anyone who is not a pie_admin. The plugin itself remains
- * active — only the UI entry points are hidden.
- *
- * @since 1.4.1
- * @return void
- */
-add_action( 'admin_menu', __NAMESPACE__ . '\hide_hummingbird_from_sidebar', 999 );
-add_action( 'network_admin_menu', __NAMESPACE__ . '\hide_hummingbird_from_sidebar', 999 );
-
-function hide_hummingbird_from_sidebar(): void
-{
-    if ( is_pie_admin() ) {
-        return;
-    }
-
-    remove_menu_page( 'wphb' );
-}
-
-/**
  * Limit WPMU DEV plugin access to pie_admin users only
  * 
  * Restricts WPMU DEV plugin functionality to users with the 'pie_admin' role
