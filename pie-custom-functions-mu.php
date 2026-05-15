@@ -232,7 +232,7 @@ function assign_pie_admin_to_user( \WP_User $user ): void
  * assigned to @pie.co.de accounts. The result is filterable so hosting
  * logic can override the check when needed.
  *
- * @since 1.4.1
+ * @since 1.4.0
  * @param int $user_id Optional. Defaults to the current user.
  * @return bool
  */

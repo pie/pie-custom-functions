@@ -57,6 +57,17 @@ function pie_remove_hidden_plugin_menu_pages(): void {
 		}
 	}
 }
-add_filter( 'all_plugins', __NAMESPACE__ . '\\pie_filter_hidden_plugins' );
+
+/**
+ * Register the hidden plugins filter on the plugins admin screen only.
+ *
+ * Restricting to load-plugins.php prevents the filter from affecting non-UI
+ * contexts such as background update checks or the REST API.
+ */
+function pie_register_hidden_plugins_filter(): void {
+	add_filter( 'all_plugins', __NAMESPACE__ . '\\pie_filter_hidden_plugins' );
+}
+add_action( 'load-plugins.php', __NAMESPACE__ . '\\pie_register_hidden_plugins_filter' );
+add_action( 'load-plugins-network.php', __NAMESPACE__ . '\\pie_register_hidden_plugins_filter' );
 add_action( 'admin_menu', __NAMESPACE__ . '\\pie_remove_hidden_plugin_menu_pages', 999 );
 add_action( 'network_admin_menu', __NAMESPACE__ . '\\pie_remove_hidden_plugin_menu_pages', 999 );
