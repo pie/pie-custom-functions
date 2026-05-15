@@ -202,8 +202,6 @@ function add_pie_admin_role_to_user_pie_email( int $user_id ): void
     }
 }
 
-
-
 /**
  * Assign pie_admin role to user if they have a @pie.co.de email address
  * 
