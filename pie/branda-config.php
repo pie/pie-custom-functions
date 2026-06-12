@@ -10,13 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Prevent non-Pie admin users from accessing Branda settings.
+ * Restrict Branda access to the pie_admin role only.
  *
- * @param array $roles Allowed Branda roles.
  * @return array
  */
-function filter_branda_allowed_roles( array $roles ): array {
-	return is_pie_admin() ? $roles : array();
+function filter_branda_allowed_roles(): array {
+	return array( 'pie_admin' );
 }
 add_filter( 'branda_permissions_allowed_roles', __NAMESPACE__ . '\\filter_branda_allowed_roles' );
 
