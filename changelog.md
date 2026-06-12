@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Add shared functions file 
 - Update hide plugins and include hummingbird plugin for non-Pie users
+- Add Security Headers functionality
 
 ## [1.4.0] 2026-01-29 
 - Refactoring & adding Redirection module
