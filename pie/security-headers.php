@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * 1. PIE_CSP_HEADER constant — emergency failsafe defined in wp-config.php.
  *    Use only when a bad CSP has broken admin access and the settings page is unreachable.
  *    When defined and non-empty, this value is returned immediately.
+ * 		(usage: define( 'PIE_CSP_HEADER', "add CSP rules here" );)
  *
  * 2. pie_csp_header option — the normal CSP value saved via the settings page.
  *
@@ -91,6 +92,10 @@ add_action( 'login_init', __NAMESPACE__ . '\\send_csp_header' );
 function sanitize_csp_option( mixed $value ): string {
 	if ( ! is_pie_admin() ) {
 		return (string) get_option( 'pie_csp_header', '' );
+	}
+
+	if ( is_array( $value ) ) {
+		return '';
 	}
 
 	$value = wp_unslash( $value );
