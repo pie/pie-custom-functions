@@ -3,7 +3,6 @@
 namespace Pie\BrandaPieHostingConfig;
 
 use function Pie\Utilities\pie_hide_plugin;
-use function Pie\CustomFunctionsMUPlugin\is_pie_admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
