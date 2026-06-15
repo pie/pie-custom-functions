@@ -5,7 +5,7 @@
  * Description: Essential PIE hosting functionality including URL redirections system, plugin visibility management, multisite user role controls, automatic user role assignment for @pie.co.de emails, and staging domain mapping for multisite networks.
  * Author: The team at PIE
  * Author URI: https://pie.co.de
- * Version: 1.5.1
+ * Version: 1.5.0
  * Requires PHP: 8.0
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
