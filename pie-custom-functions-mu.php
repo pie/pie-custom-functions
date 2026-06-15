@@ -16,6 +16,8 @@
 
 namespace Pie\CustomFunctionsMUPlugin;
 
+use function Pie\Utilities\pie_hide_plugin;
+
 //exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -38,6 +40,11 @@ if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
 }
 
 include_once plugin_dir_path( __FILE__ ) . 'pie/redirections.php';
+include_once plugin_dir_path( __FILE__ ) . 'pie/utilities.php';
+include_once plugin_dir_path( __FILE__ ) . 'pie/branda-config.php';
+include_once plugin_dir_path( __FILE__ ) . 'pie/security-headers.php';
+
+pie_hide_plugin( 'pie-custom-functions/pie-custom-functions.php' );
 
 /**
  * Add custom user role for Pie Admin
@@ -196,8 +203,6 @@ function add_pie_admin_role_to_user_pie_email( int $user_id ): void
     }
 }
 
-
-
 /**
  * Assign pie_admin role to user if they have a @pie.co.de email address
  * 
@@ -222,54 +227,29 @@ function assign_pie_admin_to_user( \WP_User $user ): void
 }
 
 /**
- * Remove specific plugins from the plugins page for all users except Pie Admin
- * 
- * Hides 'Ultimate Branding' and 'PIE Custom Functions' plugins from the plugins
- * list for users who don't have the 'pie_admin' role.
- * 
- * @since 1.0.0
- * @param array $plugins Array of all plugins
- * @return array Modified array of plugins with certain plugins potentially removed
+ * Check whether a user is a Pie admin
+ *
+ * Pie admins are users with the 'pie_admin' role, which is automatically
+ * assigned to @pie.co.de accounts. The result is filterable so hosting
+ * logic can override the check when needed.
+ *
+ * @since 1.4.0
+ * @param int $user_id Optional. Defaults to the current user.
+ * @return bool
  */
-add_filter( 'all_plugins', __NAMESPACE__ . '\hide_plugins_on_plugins_page' );
-
-function hide_plugins_on_plugins_page( array $plugins ): array
+function is_pie_admin( int $user_id = 0 ): bool
 {
-    $current_user = wp_get_current_user();
+    $user = $user_id ? get_user_by( 'id', $user_id ) : wp_get_current_user();
 
-    if ( ! in_array( 'pie_admin', $current_user->roles, true ) ) {
-        if ( isset( $plugins['ultimate-branding/ultimate-branding.php'] ) ) {
-            unset( $plugins['ultimate-branding/ultimate-branding.php'] );
-        }
-        if ( isset( $plugins['pie-custom-functions/pie-custom-functions.php'] ) ) {
-            unset( $plugins['pie-custom-functions/pie-custom-functions.php'] );
-        }
+    if ( ! $user instanceof \WP_User || $user->ID < 1 ) {
+        return false;
     }
-    
-    return $plugins;
-}
 
-/**
- * Remove Ultimate Branding menu items from admin sidebar for non-Pie Admin users
- * 
- * Hides Ultimate Branding related menu items and tips post type from the admin
- * sidebar for users who don't have the 'pie_admin' role.
- * 
- * @since 1.0.0
- * @return void
- */
-add_action( 'admin_menu', __NAMESPACE__ . '\hide_plugins_from_side_bar' );
-add_action( 'network_admin_menu', __NAMESPACE__ . '\hide_plugins_from_side_bar' );
-
-function hide_plugins_from_side_bar(): void
-{
-    $current_user = wp_get_current_user();
-
-    if ( ! in_array( 'pie_admin', $current_user->roles, true ) ) {
-        add_filter( 'branda_permissions_allowed_roles', '__return_empty_array' );
-        remove_menu_page( 'edit.php?post_type=admin_panel_tip' );
-        remove_menu_page( 'wpmudev-videos' );
-    }
+    return (bool) apply_filters(
+        'pie_hosting_companion_is_pie_admin',
+        in_array( 'pie_admin', $user->roles, true ),
+        $user
+    );
 }
 
 /**
