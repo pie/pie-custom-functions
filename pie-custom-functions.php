@@ -63,42 +63,25 @@ function pie_custom_functions_init(): void {
         require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
     }
 
-    update_option( 'pie_custom_functions_version', get_plugin_data( __FILE__ )['Version'] );
-
-    $local_mu_plugin_file = plugin_dir_path( __FILE__ ) . 'pie-custom-functions-mu.php';
+    $local_mu_plugin_file      = plugin_dir_path( __FILE__ ) . 'pie-custom-functions-mu.php';
     $local_mu_plugin_directory = plugin_dir_path( __FILE__ ) . 'pie';
 
-    // Ensure MU plugin directory is available
+    // Ensure MU plugin directory is available.
     if ( ! defined( 'WPMU_PLUGIN_DIR' ) ) {
         error_log( '[PIE Custom Functions] WPMU_PLUGIN_DIR not defined - MU plugins not supported' );
-        wp_die( 
+        wp_die(
             __( 'PIE Hosting Companion activation failed: MU plugins directory not available. Please contact your hosting provider.', 'pie-custom-functions' ),
             __( 'Plugin Activation Error', 'pie-custom-functions' ),
             array( 'back_link' => true )
         );
     }
 
-    // Set the paths for the MU plugin file and pie directory
-    $destination_mu_plugin_file = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
+    $destination_mu_plugin_file      = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
     $destination_mu_plugin_directory = WPMU_PLUGIN_DIR . '/pie';
 
-    // Copy the MU plugin file (overwrites existing)
-    if ( ! copy( $local_mu_plugin_file, $destination_mu_plugin_file ) ) {
-        error_log( '[PIE Custom Functions] Failed to copy MU plugin file to: ' . $destination_mu_plugin_file );
-        wp_die( 
-            __( 'PIE Hosting Companion activation failed: Could not copy MU plugin file. Please check file permissions.', 'pie-custom-functions' ),
-            __( 'Plugin Activation Error', 'pie-custom-functions' ),
-            array( 'back_link' => true )
-        );
-    }
-    
-    // Copy the pie directory using native PHP (no WP_Filesystem dependency).
+    // Copy the pie/ directory first — the MU loader depends on files inside it.
+    // If this fails the MU loader file is not touched, so the site stays on the previous version.
     if ( ! copy_directory_recursive( $local_mu_plugin_directory, $destination_mu_plugin_directory ) ) {
-        // Clean up the MU plugin file if directory copy failed.
-        if ( file_exists( $destination_mu_plugin_file ) ) {
-            unlink( $destination_mu_plugin_file );
-        }
-
         error_log( '[PIE Custom Functions] Failed to copy pie directory to: ' . $destination_mu_plugin_directory );
         wp_die(
             __( 'PIE Hosting Companion activation failed: Could not copy pie directory. Please check file permissions.', 'pie-custom-functions' ),
@@ -106,6 +89,20 @@ function pie_custom_functions_init(): void {
             array( 'back_link' => true )
         );
     }
+
+    // Copy the MU loader file after its dependencies are in place.
+    // If this fails the version option is not bumped, so the next request retries the full update.
+    if ( ! copy( $local_mu_plugin_file, $destination_mu_plugin_file ) ) {
+        error_log( '[PIE Custom Functions] Failed to copy MU plugin file to: ' . $destination_mu_plugin_file );
+        wp_die(
+            __( 'PIE Hosting Companion activation failed: Could not copy MU plugin file. Please check file permissions.', 'pie-custom-functions' ),
+            __( 'Plugin Activation Error', 'pie-custom-functions' ),
+            array( 'back_link' => true )
+        );
+    }
+
+    // Both copies succeeded — safe to record the new version.
+    update_option( 'pie_custom_functions_version', get_plugin_data( __FILE__ )['Version'] );
 }
 
 /**
