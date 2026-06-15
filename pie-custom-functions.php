@@ -50,9 +50,12 @@ function pie_custom_functions_load_composer(): void {
 /**
  * Initialize and activate the PIE Custom Functions plugin
  * 
- * Handles copying the MU plugin file and pie directory to the correct locations
- * during plugin activation. Updates the version number in the database and
- * performs comprehensive error handling with cleanup on failure.
+ * Copies the pie/ directory and MU loader file to the MU plugins directory,
+ * then records the current version. The directory is copied atomically via a
+ * temp-and-rename strategy so the live directory is never partially updated.
+ * The MU loader is copied only after the directory swap succeeds. If either
+ * step fails the version option is not bumped, allowing the next request to
+ * retry the full update.
  *
  * @since 1.0.0
  * @return void
@@ -79,9 +82,9 @@ function pie_custom_functions_init(): void {
     $destination_mu_plugin_file      = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
     $destination_mu_plugin_directory = WPMU_PLUGIN_DIR . '/pie';
 
-    // Copy the pie/ directory first — the MU loader depends on files inside it.
-    // If this fails the MU loader file is not touched, so the site stays on the previous version.
-    if ( ! copy_directory_recursive( $local_mu_plugin_directory, $destination_mu_plugin_directory ) ) {
+    // Copy the pie/ directory atomically (temp copy then rename) so the live
+    // directory is never in a partial state. The MU loader is not touched if this fails.
+    if ( ! pie_custom_functions_copy_directory_atomic( $local_mu_plugin_directory, $destination_mu_plugin_directory ) ) {
         error_log( '[PIE Custom Functions] Failed to copy pie directory to: ' . $destination_mu_plugin_directory );
         wp_die(
             __( 'PIE Hosting Companion activation failed: Could not copy pie directory. Please check file permissions.', 'pie-custom-functions' ),
@@ -90,10 +93,13 @@ function pie_custom_functions_init(): void {
         );
     }
 
-    // Copy the MU loader file after its dependencies are in place.
+    // Write the MU loader to a temp file in the same directory, then rename atomically
+    // over the live file. Same-directory guarantees the rename is on the same filesystem.
     // If this fails the version option is not bumped, so the next request retries the full update.
-    if ( ! copy( $local_mu_plugin_file, $destination_mu_plugin_file ) ) {
-        error_log( '[PIE Custom Functions] Failed to copy MU plugin file to: ' . $destination_mu_plugin_file );
+    $temp_mu_plugin_file = $destination_mu_plugin_file . '.new';
+
+    if ( ! copy( $local_mu_plugin_file, $temp_mu_plugin_file ) ) {
+        error_log( '[PIE Custom Functions] Failed to copy MU plugin file to: ' . $temp_mu_plugin_file );
         wp_die(
             __( 'PIE Hosting Companion activation failed: Could not copy MU plugin file. Please check file permissions.', 'pie-custom-functions' ),
             __( 'Plugin Activation Error', 'pie-custom-functions' ),
@@ -101,7 +107,17 @@ function pie_custom_functions_init(): void {
         );
     }
 
-    // Both copies succeeded — safe to record the new version.
+    if ( ! rename( $temp_mu_plugin_file, $destination_mu_plugin_file ) ) {
+        unlink( $temp_mu_plugin_file );
+        error_log( '[PIE Custom Functions] Failed to promote MU plugin file to: ' . $destination_mu_plugin_file );
+        wp_die(
+            __( 'PIE Hosting Companion activation failed: Could not install MU plugin file. Please check file permissions.', 'pie-custom-functions' ),
+            __( 'Plugin Activation Error', 'pie-custom-functions' ),
+            array( 'back_link' => true )
+        );
+    }
+
+    // pie/ swap and MU loader promotion both succeeded — safe to record the new version.
     update_option( 'pie_custom_functions_version', get_plugin_data( __FILE__ )['Version'] );
 }
 
@@ -113,7 +129,7 @@ function pie_custom_functions_init(): void {
  * @param string $destination Absolute path to the destination directory.
  * @return bool True on success, false on any failure.
  */
-function copy_directory_recursive( string $source, string $destination ): bool {
+function pie_custom_functions_copy_directory_recursive( string $source, string $destination ): bool {
     if ( ! is_dir( $source ) ) {
         return false;
     }
@@ -136,7 +152,7 @@ function copy_directory_recursive( string $source, string $destination ): bool {
         $destination_path = $destination . DIRECTORY_SEPARATOR . $entry;
 
         if ( is_dir( $source_path ) ) {
-            if ( ! copy_directory_recursive( $source_path, $destination_path ) ) {
+            if ( ! pie_custom_functions_copy_directory_recursive( $source_path, $destination_path ) ) {
                 return false;
             }
         } elseif ( ! copy( $source_path, $destination_path ) ) {
@@ -145,6 +161,92 @@ function copy_directory_recursive( string $source, string $destination ): bool {
     }
 
     return true;
+}
+
+/**
+ * Copy a directory atomically by writing to a temporary location first.
+ *
+ * Copies $source to $destination-new, then renames the existing $destination
+ * to $destination-old and promotes $destination-new to $destination. The live
+ * directory is replaced in a single rename, so it is never partially updated.
+ * Cleans up temp directories on any failure and attempts to restore the
+ * previous directory if the promotion rename fails.
+ *
+ * @since 1.5.1
+ * @param string $source      Absolute path to the source directory.
+ * @param string $destination Absolute path to the destination directory.
+ * @return bool True on success, false on any failure.
+ */
+function pie_custom_functions_copy_directory_atomic( string $source, string $destination ): bool {
+    $temp = $destination . '-new';
+    $old  = $destination . '-old';
+
+    // Remove any leftover temp directory from a previous failed attempt.
+    if ( is_dir( $temp ) ) {
+        pie_custom_functions_delete_directory_recursive( $temp );
+    }
+
+    // Copy into the temporary location — live directory is untouched until success.
+    if ( ! pie_custom_functions_copy_directory_recursive( $source, $temp ) ) {
+        pie_custom_functions_delete_directory_recursive( $temp );
+        return false;
+    }
+
+    // Move the current directory aside, then promote the new one.
+    if ( is_dir( $destination ) && ! rename( $destination, $old ) ) {
+        pie_custom_functions_delete_directory_recursive( $temp );
+        return false;
+    }
+
+    if ( ! rename( $temp, $destination ) ) {
+        // Promotion failed — restore the previous directory.
+        if ( is_dir( $old ) ) {
+            rename( $old, $destination );
+        }
+        pie_custom_functions_delete_directory_recursive( $temp );
+        return false;
+    }
+
+    // New directory is live — remove the old one.
+    if ( is_dir( $old ) ) {
+        pie_custom_functions_delete_directory_recursive( $old );
+    }
+
+    return true;
+}
+
+/**
+ * Recursively delete a directory and all its contents.
+ *
+ * @since 1.5.1
+ * @param string $path Absolute path to the directory to delete.
+ * @return bool True on success, false if the path is not a directory or cannot be scanned.
+ */
+function pie_custom_functions_delete_directory_recursive( string $path ): bool {
+    if ( ! is_dir( $path ) ) {
+        return false;
+    }
+
+    $entries = scandir( $path );
+    if ( false === $entries ) {
+        return false;
+    }
+
+    foreach ( $entries as $entry ) {
+        if ( '.' === $entry || '..' === $entry ) {
+            continue;
+        }
+
+        $entry_path = $path . DIRECTORY_SEPARATOR . $entry;
+
+        if ( is_dir( $entry_path ) ) {
+            pie_custom_functions_delete_directory_recursive( $entry_path );
+        } else {
+            unlink( $entry_path );
+        }
+    }
+
+    return rmdir( $path );
 }
 
 /**
