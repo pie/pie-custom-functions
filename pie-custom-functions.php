@@ -55,7 +55,6 @@ function pie_custom_functions_load_composer(): void {
  * performs comprehensive error handling with cleanup on failure.
  *
  * @since 1.0.0
- * @throws WP_Error If file operations fail
  * @return void
  */
 function pie_custom_functions_init(): void {
@@ -93,26 +92,62 @@ function pie_custom_functions_init(): void {
         );
     }
     
-    // Copy the pie directory (WordPress core function handles overwriting)
-    if ( ! function_exists( 'copy_dir' ) ) {
-        require_once( ABSPATH . 'wp-admin/includes/file.php' );
-    }
-    
-    $copy_result = copy_dir( $local_mu_plugin_directory, $destination_mu_plugin_directory );
-    if ( is_wp_error( $copy_result ) || ! $copy_result ) {
-        // Clean up the MU plugin file if directory copy failed
+    // Copy the pie directory using native PHP (no WP_Filesystem dependency).
+    if ( ! copy_directory_recursive( $local_mu_plugin_directory, $destination_mu_plugin_directory ) ) {
+        // Clean up the MU plugin file if directory copy failed.
         if ( file_exists( $destination_mu_plugin_file ) ) {
             unlink( $destination_mu_plugin_file );
         }
-        
-        $error_message = is_wp_error( $copy_result ) ? $copy_result->get_error_message() : 'Unknown error';
-        error_log( '[PIE Custom Functions] Failed to copy pie directory: ' . $error_message );
-        wp_die( 
-            __( 'PIE Hosting Companion activation failed: Could not copy pie directory. Please check file permissions.', 'pie-custom-functions' ) . ' ' . $error_message,
+
+        error_log( '[PIE Custom Functions] Failed to copy pie directory to: ' . $destination_mu_plugin_directory );
+        wp_die(
+            __( 'PIE Hosting Companion activation failed: Could not copy pie directory. Please check file permissions.', 'pie-custom-functions' ),
             __( 'Plugin Activation Error', 'pie-custom-functions' ),
             array( 'back_link' => true )
         );
     }
+}
+
+/**
+ * Recursively copy a directory using native PHP filesystem functions.
+ *
+ * @since 1.5.1
+ * @param string $source      Absolute path to the source directory.
+ * @param string $destination Absolute path to the destination directory.
+ * @return bool True on success, false on any failure.
+ */
+function copy_directory_recursive( string $source, string $destination ): bool {
+    if ( ! is_dir( $source ) ) {
+        return false;
+    }
+
+    if ( ! is_dir( $destination ) && ! mkdir( $destination, 0755, true ) ) {
+        return false;
+    }
+
+    $entries = scandir( $source );
+    if ( false === $entries ) {
+        return false;
+    }
+
+    foreach ( $entries as $entry ) {
+        if ( '.' === $entry || '..' === $entry ) {
+            continue;
+        }
+
+        $source_path      = $source . DIRECTORY_SEPARATOR . $entry;
+        $destination_path = $destination . DIRECTORY_SEPARATOR . $entry;
+
+        if ( is_dir( $source_path ) ) {
+            if ( ! copy_directory_recursive( $source_path, $destination_path ) ) {
+                return false;
+            }
+        } elseif ( ! copy( $source_path, $destination_path ) ) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**
