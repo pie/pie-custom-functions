@@ -241,7 +241,7 @@ function is_pie_admin( int $user_id = 0 ): bool
 {
     $user = $user_id ? get_user_by( 'id', $user_id ) : wp_get_current_user();
 
-    if ( ! $user || empty( $user->ID ) ) {
+    if ( ! $user instanceof \WP_User || $user->ID < 1 ) {
         return false;
     }
 
