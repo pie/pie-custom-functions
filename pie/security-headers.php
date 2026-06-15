@@ -125,11 +125,11 @@ add_action( 'admin_init', __NAMESPACE__ . '\\register_csp_settings' );
 /**
  * Add the Pie Security Headers settings page under Settings.
  *
- * Access is controlled by is_pie_admin(), not by manage_options. The page
- * is only registered for Pie admin users, so WordPress never exposes it to
- * regular administrators — direct URL access returns a "page not found"
- * error from WordPress before our render callback is ever reached.
- * The render callback repeats the is_pie_admin() check as defence in depth.
+ * Access is gated by is_pie_admin() and WordPress capability checks. The page
+ * is only registered for Pie admin users, and it uses 'manage_options' like
+ * other Settings pages to align with WordPress' admin UX patterns.
+ * Regular administrators won't see the page, and direct URL access will
+ * return a "page not found" error before the render callback is reached.
  *
  * @since 1.4.0
  * @return void
