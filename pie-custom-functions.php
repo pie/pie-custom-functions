@@ -4,7 +4,7 @@
  * Description: Required Functionality for PIE Hosting
  * Author: The team at PIE
  * Author URI: https://pie.co.de
- * Version: 1.5.0
+ * Version: 1.5.1
  * Requires PHP: 8.0
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -23,7 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Hookups
-register_activation_hook( __FILE__ , __NAMESPACE__ . '\pie_custom_functions_init' );
+register_activation_hook( __FILE__, function() {
+    pie_custom_functions_init( true );
+} );
 add_action( 'plugins_loaded', __NAMESPACE__ . '\pie_custom_functions_load_composer' );
 add_action( 'plugins_loaded', __NAMESPACE__ . '\update_check' );
 add_filter( 'all_plugins', __NAMESPACE__ . '\hide_pie_custom_functions_mu_plugin_from_plugins_list' );
@@ -55,12 +57,15 @@ function pie_custom_functions_load_composer(): void {
  * temp-and-rename strategy so the live directory is never partially updated.
  * The MU loader is copied only after the directory swap succeeds. If either
  * step fails the version option is not bumped, allowing the next request to
- * retry the full update.
+ * retry the full update. On the activation path failures call wp_die() to show
+ * an error screen; on the auto-update path they log silently and return so
+ * requests continue normally.
  *
  * @since 1.0.0
+ * @param bool $is_activation True when called from the activation hook, false on auto-update.
  * @return void
  */
-function pie_custom_functions_init(): void {
+function pie_custom_functions_init( bool $is_activation = false ): void {
 
     if ( ! function_exists( 'get_plugin_data' ) ) {
         require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
@@ -72,11 +77,14 @@ function pie_custom_functions_init(): void {
     // Ensure MU plugin directory is available.
     if ( ! defined( 'WPMU_PLUGIN_DIR' ) ) {
         error_log( '[PIE Custom Functions] WPMU_PLUGIN_DIR not defined - MU plugins not supported' );
-        wp_die(
-            __( 'PIE Hosting Companion activation failed: MU plugins directory not available. Please contact your hosting provider.', 'pie-custom-functions' ),
-            __( 'Plugin Activation Error', 'pie-custom-functions' ),
-            array( 'back_link' => true )
-        );
+        if ( $is_activation ) {
+            wp_die(
+                __( 'PIE Hosting Companion activation failed: MU plugins directory not available. Please contact your hosting provider.', 'pie-custom-functions' ),
+                __( 'Plugin Activation Error', 'pie-custom-functions' ),
+                array( 'back_link' => true )
+            );
+        }
+        return;
     }
 
     $destination_mu_plugin_file      = WPMU_PLUGIN_DIR . '/pie-custom-functions-mu.php';
@@ -86,11 +94,14 @@ function pie_custom_functions_init(): void {
     // directory is never in a partial state. The MU loader is not touched if this fails.
     if ( ! pie_custom_functions_copy_directory_atomic( $local_mu_plugin_directory, $destination_mu_plugin_directory ) ) {
         error_log( '[PIE Custom Functions] Failed to copy pie directory to: ' . $destination_mu_plugin_directory );
-        wp_die(
-            __( 'PIE Hosting Companion activation failed: Could not copy pie directory. Please check file permissions.', 'pie-custom-functions' ),
-            __( 'Plugin Activation Error', 'pie-custom-functions' ),
-            array( 'back_link' => true )
-        );
+        if ( $is_activation ) {
+            wp_die(
+                __( 'PIE Hosting Companion activation failed: Could not copy pie directory. Please check file permissions.', 'pie-custom-functions' ),
+                __( 'Plugin Activation Error', 'pie-custom-functions' ),
+                array( 'back_link' => true )
+            );
+        }
+        return;
     }
 
     // Write the MU loader to a temp file in the same directory, then rename atomically
@@ -100,21 +111,27 @@ function pie_custom_functions_init(): void {
 
     if ( ! copy( $local_mu_plugin_file, $temp_mu_plugin_file ) ) {
         error_log( '[PIE Custom Functions] Failed to copy MU plugin file to: ' . $temp_mu_plugin_file );
-        wp_die(
-            __( 'PIE Hosting Companion activation failed: Could not copy MU plugin file. Please check file permissions.', 'pie-custom-functions' ),
-            __( 'Plugin Activation Error', 'pie-custom-functions' ),
-            array( 'back_link' => true )
-        );
+        if ( $is_activation ) {
+            wp_die(
+                __( 'PIE Hosting Companion activation failed: Could not copy MU plugin file. Please check file permissions.', 'pie-custom-functions' ),
+                __( 'Plugin Activation Error', 'pie-custom-functions' ),
+                array( 'back_link' => true )
+            );
+        }
+        return;
     }
 
     if ( ! rename( $temp_mu_plugin_file, $destination_mu_plugin_file ) ) {
         unlink( $temp_mu_plugin_file );
         error_log( '[PIE Custom Functions] Failed to promote MU plugin file to: ' . $destination_mu_plugin_file );
-        wp_die(
-            __( 'PIE Hosting Companion activation failed: Could not install MU plugin file. Please check file permissions.', 'pie-custom-functions' ),
-            __( 'Plugin Activation Error', 'pie-custom-functions' ),
-            array( 'back_link' => true )
-        );
+        if ( $is_activation ) {
+            wp_die(
+                __( 'PIE Hosting Companion activation failed: Could not install MU plugin file. Please check file permissions.', 'pie-custom-functions' ),
+                __( 'Plugin Activation Error', 'pie-custom-functions' ),
+                array( 'back_link' => true )
+            );
+        }
+        return;
     }
 
     // pie/ swap and MU loader promotion both succeeded — safe to record the new version.
@@ -181,9 +198,14 @@ function pie_custom_functions_copy_directory_atomic( string $source, string $des
     $temp = $destination . '-new';
     $old  = $destination . '-old';
 
-    // Remove any leftover temp directory from a previous failed attempt.
-    if ( is_dir( $temp ) ) {
-        pie_custom_functions_delete_directory_recursive( $temp );
+    // Clean up any leftover temp directories from previous failed attempts.
+    // If either cannot be fully removed the rename steps that follow would fail anyway.
+    if ( is_dir( $temp ) && ! pie_custom_functions_delete_directory_recursive( $temp ) ) {
+        return false;
+    }
+
+    if ( is_dir( $old ) && ! pie_custom_functions_delete_directory_recursive( $old ) ) {
+        return false;
     }
 
     // Copy into the temporary location — live directory is untouched until success.
@@ -199,9 +221,9 @@ function pie_custom_functions_copy_directory_atomic( string $source, string $des
     }
 
     if ( ! rename( $temp, $destination ) ) {
-        // Promotion failed — restore the previous directory.
-        if ( is_dir( $old ) ) {
-            rename( $old, $destination );
+        // Promotion failed — attempt to restore the previous directory.
+        if ( is_dir( $old ) && ! rename( $old, $destination ) ) {
+            error_log( '[PIE Custom Functions] CRITICAL: promotion and rollback both failed. The live pie/ directory may be missing at: ' . $destination );
         }
         pie_custom_functions_delete_directory_recursive( $temp );
         return false;
@@ -220,7 +242,7 @@ function pie_custom_functions_copy_directory_atomic( string $source, string $des
  *
  * @since 1.5.1
  * @param string $path Absolute path to the directory to delete.
- * @return bool True on success, false if the path is not a directory or cannot be scanned.
+ * @return bool True on success, false if the path is not a directory, cannot be scanned, or any file or subdirectory cannot be deleted.
  */
 function pie_custom_functions_delete_directory_recursive( string $path ): bool {
     if ( ! is_dir( $path ) ) {
@@ -240,9 +262,11 @@ function pie_custom_functions_delete_directory_recursive( string $path ): bool {
         $entry_path = $path . DIRECTORY_SEPARATOR . $entry;
 
         if ( is_dir( $entry_path ) ) {
-            pie_custom_functions_delete_directory_recursive( $entry_path );
-        } else {
-            unlink( $entry_path );
+            if ( ! pie_custom_functions_delete_directory_recursive( $entry_path ) ) {
+                return false;
+            }
+        } elseif ( ! unlink( $entry_path ) ) {
+            return false;
         }
     }
 
