@@ -43,6 +43,7 @@ include_once plugin_dir_path( __FILE__ ) . 'pie/redirections.php';
 include_once plugin_dir_path( __FILE__ ) . 'pie/utilities.php';
 include_once plugin_dir_path( __FILE__ ) . 'pie/branda-config.php';
 include_once plugin_dir_path( __FILE__ ) . 'pie/security-headers.php';
+include_once plugin_dir_path( __FILE__ ) . 'pie/update-watchdog.php';
 
 pie_hide_plugin( 'pie-custom-functions/pie-custom-functions.php' );
 
