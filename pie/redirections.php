@@ -14,10 +14,10 @@
  *      * /
  *      function {site}_redirect_rules( array $rules ): array {
  *          $rules[] = array(
- *              'pattern' => '#^/old-path/*$#',
+ *              'pattern' => '#^/old-path/?$#',
  *              'destination' => '/new-path/',
- *              'condition' => 'not_admin',  // 'always', 'not_admin', 'not_logged_in' or callable
- *              'status_code' => 301
+ *              'condition' => 'not_admin',  // 'always', 'not_admin', 'not_logged_in', 'logged_in', or callable.
+ *              'status_code' => 301,
  *          );
  *          return $rules;
  *      }
