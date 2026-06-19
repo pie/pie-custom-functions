@@ -86,7 +86,11 @@ function pie_block_hidden_plugin_pages(): void {
 
 	foreach ( $GLOBALS['pie_hidden_plugins'] as $menu_slugs ) {
 		if ( in_array( $current_page, $menu_slugs, true ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.' ), 403 );
+			wp_die(
+				esc_html__( 'You do not have sufficient permissions to access this page.', 'pie-custom-functions' ),
+				'',
+				array( 'response' => 403 )
+			);
 		}
 	}
 }

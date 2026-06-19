@@ -82,7 +82,7 @@ add_action( 'init', __NAMESPACE__ . '\migrate_remove_pie_admin_role', 10 );
  *
  * @since 1.5.2
  */
-function grant_pie_admin_caps( array $allcaps, array $caps, array $args, \WP_User $user ): array {
+function grant_pie_admin_caps( array $allcaps, array $_caps, array $_args, \WP_User $user ): array {
     if ( ! is_pie_admin( $user->ID ) ) {
         return $allcaps;
     }

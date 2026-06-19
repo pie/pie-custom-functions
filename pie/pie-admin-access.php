@@ -51,7 +51,15 @@ function save_pie_admin_override_field( int $user_id ): void {
 		return;
 	}
 
-	if ( isset( $_POST['pie_admin_override'] ) && '1' === $_POST['pie_admin_override'] ) {
+	// Extra safety check in case grant_pie_admin_caps() is ever broken or removed.
+	if ( ! current_user_can( 'edit_user', $user_id ) ) {
+		return;
+	}
+
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified above
+	$value = isset( $_POST['pie_admin_override'] ) ? sanitize_text_field( wp_unslash( $_POST['pie_admin_override'] ) ) : '';
+
+	if ( '1' === $value ) {
 		update_user_meta( $user_id, 'pie_admin_override', true );
 	} else {
 		delete_user_meta( $user_id, 'pie_admin_override' );
