@@ -46,192 +46,65 @@ include_once plugin_dir_path( __FILE__ ) . 'pie/security-headers.php';
 
 pie_hide_plugin( 'pie-custom-functions/pie-custom-functions.php' );
 
-/**
- * Add custom user role for Pie Admin
- * 
- * Creates a new 'pie_admin' role with administrator capabilities.
- * Removes any existing role with the same name first.
- * 
- * @since 1.0.0
- * @return void
- */
-function add_pie_admin_role(): void
-{
-    remove_role( 'pie_admin' );
-    add_role( 'pie_admin', 'Pie Admin', get_role( 'administrator' )->capabilities );
-}
-// Hook the function into the 'init' action with a lower priority
-add_action( 'init', __NAMESPACE__ . '\add_pie_admin_role', 10 );
+// One-time migration: strip the legacy pie_admin role from all users and delete the role definition.
+add_action( 'init', function(): void {
+    if ( get_option( 'pie_admin_role_cleanup_done' ) ) {
+        return;
+    }
 
-
-/**
- * Add the 'Pie Admin' role to any existing user that has an email address ending in '@pie.co.de'
- * 
- * This function runs during plugin initialization and searches for all users
- * with @pie.co.de email addresses, then assigns them the pie_admin role.
- * 
- * @since 1.0.0
- * @return void
- */
-function add_pie_admin_role_to_existing_users(): void
-{
-    $users = get_users( array(
-        'search' => '*@pie.co.de',
-        'search_columns' => array( 'user_email' ),
-    ) );
-
+    $users = get_users( array( 'role' => 'pie_admin' ) );
     foreach ( $users as $user ) {
-        assign_pie_admin_to_user( $user );
+        $user->remove_role( 'pie_admin' );
     }
-}
-add_action( 'init', __NAMESPACE__ . '\add_pie_admin_role_to_existing_users', 10 );
+
+    if ( get_role( 'pie_admin' ) ) {
+        remove_role( 'pie_admin' );
+    }
+
+    update_option( 'pie_admin_role_cleanup_done', true );
+}, 10 );
 
 /**
- * Add a meta box to the user profile page to allow the user to select a custom role
- * This box is only to be shown on Multisite as a user must be a super admin witht the 'pie_admin' role added as an additional role
- * 
- * @return void
- */
-if ( is_multisite() ) {
-
-    /**
-     * Add a custom meta box to the user profile page
-     * 
-     * Registers action hooks to display the custom role selection
-     * meta box on both user profile editing pages.
-     * 
-     * @since 1.0.0
-     * @return void
-     */
-    add_action( 'admin_init', __NAMESPACE__ . '\custom_user_profile_meta_box' );
-
-    function custom_user_profile_meta_box(): void
-    {
-        add_action( 'show_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback' );
-        add_action( 'edit_user_profile', __NAMESPACE__ . '\custom_user_role_meta_box_callback' );
-    }
-
-    /**
-     * Display the custom meta box on the user profile page
-     * 
-     * Renders a dropdown selection for assigning custom user roles.
-     * Currently supports the 'pie_admin' role selection.
-     *
-     * @since 1.0.0
-     * @param \WP_User $user The user object being edited
-     * @return void
-     */
-    function custom_user_role_meta_box_callback( \WP_User $user ): void
-    {
-        $selected_role = get_user_meta( $user->ID, 'custom_user_role', true );
-
-        echo '<h3>Custom User Role</h3>';
-        echo '<table class="form-table"><tr>';
-        echo '<th><label for="custom_user_role">Select Custom User Role:</label></th>';
-        echo '<td><select name="custom_user_role" id="custom_user_role">';
-
-        $selected = selected( $selected_role, 'pie_admin', false );
-        echo "<option value='' $selected>Select Role</option>";
-        echo "<option value='pie_admin' $selected>Pie Admin</option>";
-
-        echo '</select></td></tr></table>';
-    }
-
-    /**
-     * Save the selected custom role when the user profile is updated
-     * 
-     * Validates user permissions and sanitizes the role selection before
-     * saving it to user meta data.
-     * 
-     * @since 1.0.0
-     * @param int $user_id The ID of the user being updated
-     * @return void
-     */
-    add_action( 'personal_options_update', __NAMESPACE__ . '\custom_save_user_role' );
-    add_action( 'edit_user_profile_update', __NAMESPACE__ . '\custom_save_user_role' );
-
-    function custom_save_user_role( int $user_id ): void
-    {
-        if ( current_user_can( 'edit_user', $user_id ) && isset( $_POST['custom_user_role'] ) ) {
-            $selected_role = sanitize_key( $_POST['custom_user_role'] );
-            update_user_meta( $user_id, 'custom_user_role', $selected_role );
-        }
-    }
-
-    /**
-     * Set the custom role after the user has been saved
-     * 
-     * Retrieves the selected custom role from user meta and assigns
-     * it to the user if a valid role was selected.
-     * 
-     * @since 1.0.0
-     * @param int $user_id The ID of the user being updated
-     * @return void
-     */
-    add_action( 'profile_update', __NAMESPACE__ . '\custom_set_user_role' );
-
-    function custom_set_user_role( int $user_id ): void
-    {
-        $selected_role = get_user_meta( $user_id, 'custom_user_role', true );
-
-        if ( $selected_role ) {
-            $user = get_userdata( $user_id );
-            if ( $user ) {
-                $user->add_role( $selected_role );
-            }
-        }
-    }
-}
-
-/**
- * Add the 'Pie Admin' role to any user that registers with an email address ending in '@pie.co.de'
- * 
- * This function is automatically triggered when a new user registers.
- * It checks their email domain and assigns the pie_admin role if appropriate.
- * 
- * @since 1.0.0
- * @param int $user_id The ID of the newly registered user
- * @return void
- */
-add_action( 'user_register', __NAMESPACE__ . '\add_pie_admin_role_to_user_pie_email' );
-
-function add_pie_admin_role_to_user_pie_email( int $user_id ): void
-{
-    $user = get_userdata( $user_id );
-    if ( $user ) {
-        assign_pie_admin_to_user( $user );
-    }
-}
-
-/**
- * Assign pie_admin role to user if they have a @pie.co.de email address
- * 
- * Checks the user's email domain and adds the 'pie_admin' role
- * if the domain matches 'pie.co.de'.
- * 
- * @since 1.0.0
- * @param \WP_User $user The user object to check and potentially assign role to
- * @return void
- */
-function assign_pie_admin_to_user( \WP_User $user ): void
-{
-    $email = $user->user_email;
-    $email_parts = explode( '@', $email );
-    
-    if ( 2 === count( $email_parts ) ) {
-        $domain = $email_parts[1];
-        if ( 'pie.co.de' === $domain ) {
-            $user->add_role( 'pie_admin' );
-        }
-    }
-}
-
-/**
- * Check whether a user is a Pie admin
+ * Dynamically grant administrator capabilities to any @pie.co.de user.
  *
- * Pie admins are users with the 'pie_admin' role, which is automatically
- * assigned to @pie.co.de accounts. The result is filterable so hosting
- * logic can override the check when needed.
+ * This replaces the previous role-based approach — no role is created or
+ * assigned. Capabilities are computed at runtime from the user's email.
+ *
+ * @since 1.5.2
+ */
+add_filter( 'user_has_cap', __NAMESPACE__ . '\grant_pie_admin_caps', 10, 4 );
+
+function grant_pie_admin_caps( array $allcaps, array $caps, array $args, \WP_User $user ): array {
+    if ( ! is_pie_admin_email( $user->user_email ) ) {
+        return $allcaps;
+    }
+
+    $admin_role = get_role( 'administrator' );
+    if ( $admin_role ) {
+        foreach ( $admin_role->capabilities as $cap => $grant ) {
+            $allcaps[ $cap ] = $grant;
+        }
+    }
+
+    return $allcaps;
+}
+
+/**
+ * Check whether an email address belongs to PIE.
+ *
+ * @since 1.5.2
+ * @param string $email
+ * @return bool
+ */
+function is_pie_admin_email( string $email ): bool {
+    return str_ends_with( $email, '@pie.co.de' );
+}
+
+/**
+ * Check whether a user is a Pie admin.
+ *
+ * Any user with an @pie.co.de email is considered a Pie admin. The result
+ * is filterable so hosting logic can override the check when needed.
  *
  * @since 1.4.0
  * @param int $user_id Optional. Defaults to the current user.
@@ -247,21 +120,19 @@ function is_pie_admin( int $user_id = 0 ): bool
 
     return (bool) apply_filters(
         'pie_hosting_companion_is_pie_admin',
-        in_array( 'pie_admin', $user->roles, true ),
+        is_pie_admin_email( $user->user_email ),
         $user
     );
 }
 
 /**
- * Limit WPMU DEV plugin access to pie_admin users only
- * 
- * Restricts WPMU DEV plugin functionality to users with the 'pie_admin' role
- * by setting the WPMUDEV_LIMIT_TO_USER constant with pie admin user IDs.
- * 
+ * Limit WPMU DEV plugin access to @pie.co.de users only.
+ *
  * @since 1.0.0
  */
 $users = get_users( array(
-    'role' => 'pie_admin'
+    'search'         => '*@pie.co.de',
+    'search_columns' => array( 'user_email' ),
 ) );
 
 // wp_list_pluck always returns an array
