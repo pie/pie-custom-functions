@@ -46,8 +46,16 @@ include_once plugin_dir_path( __FILE__ ) . 'pie/security-headers.php';
 
 pie_hide_plugin( 'pie-custom-functions/pie-custom-functions.php' );
 
-// One-time migration: strip the legacy pie_admin role from all users and delete the role definition.
-add_action( 'init', function(): void {
+/**
+ * Remove the legacy pie_admin role and strip it from all users.
+ *
+ * One-time migration from the role-based approach to the email-based cap grant
+ * introduced in 1.5.2. Safe to delete once all sites have run this migration.
+ *
+ * @since 1.5.2
+ * @deprecated Can be removed in a future version once pie_admin_role_cleanup_done is set everywhere.
+ */
+function migrate_remove_pie_admin_role(): void {
     if ( get_option( 'pie_admin_role_cleanup_done' ) ) {
         return;
     }
@@ -62,7 +70,8 @@ add_action( 'init', function(): void {
     }
 
     update_option( 'pie_admin_role_cleanup_done', true );
-}, 10 );
+}
+add_action( 'init', __NAMESPACE__ . '\migrate_remove_pie_admin_role', 10 );
 
 /**
  * Dynamically grant administrator capabilities to any @pie.co.de user.
@@ -72,8 +81,6 @@ add_action( 'init', function(): void {
  *
  * @since 1.5.2
  */
-add_filter( 'user_has_cap', __NAMESPACE__ . '\grant_pie_admin_caps', 10, 4 );
-
 function grant_pie_admin_caps( array $allcaps, array $caps, array $args, \WP_User $user ): array {
     if ( ! is_pie_admin_email( $user->user_email ) ) {
         return $allcaps;
@@ -88,6 +95,7 @@ function grant_pie_admin_caps( array $allcaps, array $caps, array $args, \WP_Use
 
     return $allcaps;
 }
+add_filter( 'user_has_cap', __NAMESPACE__ . '\grant_pie_admin_caps', 10, 4 );
 
 /**
  * Check whether an email address belongs to PIE.
