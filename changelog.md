@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Update: Redirection module usage example
+- Remove Pie Admin role and update permission options
 
 ## [1.5.1] 2026-06-15 
 - Fix: atomic MU plugin deployment to prevent partial updates and site outage on failed auto-update
