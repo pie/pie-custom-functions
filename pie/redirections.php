@@ -5,15 +5,23 @@
  * Usage:
  * 
  * 1. Add custom redirect rules via filter:
- *    add_filter('PIE\Redirections\filters\redirect_rules', function($rules) {
- *        $rules[] = [
- *            'pattern' => '#^/old-path/*$#',
- *            'destination' => '/new-path/',
- *            'condition' => 'not_admin',  // 'always', 'not_admin', 'not_logged_in' or callable
- *            'status_code' => 301
- *        ];
- *        return $rules;
- *    });
+ *     
+ *      / **
+ *      * Add redirect rules using the Pie Hosting Companion plugin's redirections module.
+ *      *
+ *      * @param array $rules Existing redirect rules.
+ *      * @return array Modified redirect rules with custom additions.
+ *      * /
+ *      function {site}_redirect_rules( array $rules ): array {
+ *          $rules[] = array(
+ *              'pattern' => '#^/old-path/?$#',
+ *              'destination' => '/new-path/',
+ *              'condition' => 'not_admin',  // 'always', 'not_admin', 'not_logged_in', 'logged_in', or callable.
+ *              'status_code' => 301,
+ *          );
+ *          return $rules;
+ *      }
+ *      add_filter( 'PIE\Redirections\filters\redirect_rules', '{site}_redirect_rules' );
  * 
  * Patterns use regex syntax. Common examples:
  * - '#^/old-page/?$#' matches /old-page or /old-page/

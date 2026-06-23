@@ -69,5 +69,31 @@ function pie_register_hidden_plugins_filter(): void {
 }
 add_action( 'load-plugins.php', __NAMESPACE__ . '\\pie_register_hidden_plugins_filter' );
 add_action( 'load-plugins-network.php', __NAMESPACE__ . '\\pie_register_hidden_plugins_filter' );
+/**
+ * Block direct URL access to hidden plugin admin pages for non-Pie admin users.
+ */
+function pie_block_hidden_plugin_pages(): void {
+	if ( is_pie_admin() ) {
+		return;
+	}
+
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$current_page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
+
+	if ( ! $current_page ) {
+		return;
+	}
+
+	foreach ( $GLOBALS['pie_hidden_plugins'] as $menu_slugs ) {
+		if ( in_array( $current_page, $menu_slugs, true ) ) {
+			wp_die(
+				esc_html__( 'You do not have sufficient permissions to access this page.', 'pie-custom-functions' ),
+				'',
+				array( 'response' => 403 )
+			);
+		}
+	}
+}
+add_action( 'admin_init', __NAMESPACE__ . '\\pie_block_hidden_plugin_pages' );
 add_action( 'admin_menu', __NAMESPACE__ . '\\pie_remove_hidden_plugin_menu_pages', 999 );
 add_action( 'network_admin_menu', __NAMESPACE__ . '\\pie_remove_hidden_plugin_menu_pages', 999 );
