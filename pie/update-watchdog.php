@@ -29,7 +29,9 @@ add_action( CRON_HOOK, __NAMESPACE__ . '\check_stuck_update' );
  * Hooked to upgrader_pre_install — must return $response unchanged to avoid
  * aborting the update.
  *
- * @param array $upgrade_context Upgrader context containing the extension identifier (e.g., 'plugin' or 'theme').
+ * @param bool|\WP_Error $response   Installation response.
+ * @param array          $upgrade_context Upgrader context containing the extension identifier (e.g., 'plugin' or 'theme').
+ * @return bool|\WP_Error $response  Unchanged installation response.
  */
 function record_update_start( mixed $response, array $upgrade_context ): mixed {
 	$type = '';
