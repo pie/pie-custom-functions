@@ -2,9 +2,9 @@
 /**
  * Update Watchdog - Tracks in-progress plugin and theme updates.
  *
- * Records a timestamp when each update begins and clears it on completion.
- * A scheduled check runs every 15 minutes to alert via email when an update
- * appears stuck (i.e. has been in-progress longer than the threshold).
+ * Schedules a one-off WP-Cron event when each update begins. If the update
+ * completes normally the event is cancelled. If the server crashes and the
+ * completion hook never fires, the event runs and sends an alert email.
  *
  * @package pie-custom-functions
  */
@@ -14,61 +14,35 @@ namespace PIE\UpdateWatchdog;
 const OPTION_KEY    = 'pie_update_watchdog';
 const STUCK_MINUTES = 15;
 const CRON_HOOK     = 'pie_update_watchdog_check';
-const CRON_INTERVAL = 'pie_every_15_minutes';
 
-add_filter( 'cron_schedules', __NAMESPACE__ . '\register_cron_interval' );
-add_action( 'init', __NAMESPACE__ . '\schedule_cron' );
 add_filter( 'upgrader_pre_install', __NAMESPACE__ . '\record_update_start', 10, 2 );
 add_action( 'upgrader_process_complete', __NAMESPACE__ . '\record_update_complete', 10, 2 );
-add_action( CRON_HOOK, __NAMESPACE__ . '\check_for_stuck_updates' );
+add_action( CRON_HOOK, __NAMESPACE__ . '\check_stuck_update' );
 
 /**
- * Register the 15-minute cron interval.
- *
- * @param array $schedules Existing cron schedules.
- * @return array Modified schedules.
- */
-function register_cron_interval( array $schedules ): array {
-	$schedules[ CRON_INTERVAL ] = array(
-		'interval' => STUCK_MINUTES * MINUTE_IN_SECONDS,
-		'display'  => __( 'Every 15 Minutes', 'pie-custom-functions' ),
-	);
-	return $schedules;
-}
-
-/**
- * Ensure the watchdog cron event is scheduled.
- */
-function schedule_cron(): void {
-	if ( false === wp_next_scheduled( CRON_HOOK ) ) {
-		wp_schedule_event( time(), CRON_INTERVAL, CRON_HOOK );
-	}
-}
-
-/**
- * Record the start of a plugin or theme update before installation begins.
+ * Record the start of a plugin or theme update and schedule a watchdog check.
  *
  * Hooked to upgrader_pre_install — must return $response unchanged to avoid
  * aborting the update.
  *
- * @param mixed $response   Pass-through value; return as-is.
- * @param array $hook_extra Upgrader context containing type, action, and the extension key.
+ * @param mixed $response        Pass-through value; return as-is.
+ * @param array $upgrade_context Upgrader context containing type, action, and the extension key.
  * @return mixed Unchanged $response.
  */
-function record_update_start( mixed $response, array $hook_extra ): mixed {
-	if ( ! isset( $hook_extra['action'] ) || 'update' !== $hook_extra['action'] ) {
+function record_update_start( mixed $response, array $upgrade_context ): mixed {
+	if ( ! isset( $upgrade_context['action'] ) || 'update' !== $upgrade_context['action'] ) {
 		return $response;
 	}
 
-	$type = $hook_extra['type'] ?? '';
+	$type = $upgrade_context['type'] ?? '';
 	$key  = '';
 	$name = '';
 
-	if ( 'plugin' === $type && isset( $hook_extra['plugin'] ) ) {
-		$key  = $hook_extra['plugin'];
+	if ( 'plugin' === $type && isset( $upgrade_context['plugin'] ) ) {
+		$key  = $upgrade_context['plugin'];
 		$name = resolve_plugin_name( $key );
-	} elseif ( 'theme' === $type && isset( $hook_extra['theme'] ) ) {
-		$key  = $hook_extra['theme'];
+	} elseif ( 'theme' === $type && isset( $upgrade_context['theme'] ) ) {
+		$key  = $upgrade_context['theme'];
 		$name = resolve_theme_name( $key );
 	}
 
@@ -84,44 +58,49 @@ function record_update_start( mixed $response, array $hook_extra ): mixed {
 	);
 	update_option( OPTION_KEY, $watchlist, false );
 
+	// Clear any previously scheduled check for this key, then schedule a fresh one.
+	wp_clear_scheduled_hook( CRON_HOOK, array( $key ) );
+	wp_schedule_single_event( time() + STUCK_MINUTES * MINUTE_IN_SECONDS, CRON_HOOK, array( $key ) );
+
 	return $response;
 }
 
 /**
- * Remove completed update(s) from the watchlist.
+ * Remove completed update(s) from the watchlist and cancel their watchdog events.
  *
  * Handles both single-item and bulk upgrades by checking for both the
  * singular key (plugin/theme) and the plural key (plugins/themes).
  *
- * @param \WP_Upgrader $_upgrader  The upgrader instance (unused).
- * @param array        $hook_extra Upgrader context containing type and extension key(s).
+ * @param \WP_Upgrader $_upgrader       The upgrader instance (unused).
+ * @param array        $upgrade_context Upgrader context containing type and extension key(s).
  */
-function record_update_complete( \WP_Upgrader $_upgrader, array $hook_extra ): void {
+function record_update_complete( \WP_Upgrader $_upgrader, array $upgrade_context ): void {
 	$watchlist = get_option( OPTION_KEY, array() );
 
 	if ( array() === $watchlist ) {
 		return;
 	}
 
-	$type = $hook_extra['type'] ?? '';
+	$type = $upgrade_context['type'] ?? '';
 	$keys = array();
 
 	if ( 'plugin' === $type ) {
-		if ( isset( $hook_extra['plugins'] ) ) {
-			$keys = $hook_extra['plugins'];
-		} elseif ( isset( $hook_extra['plugin'] ) ) {
-			$keys = array( $hook_extra['plugin'] );
+		if ( isset( $upgrade_context['plugins'] ) ) {
+			$keys = $upgrade_context['plugins'];
+		} elseif ( isset( $upgrade_context['plugin'] ) ) {
+			$keys = array( $upgrade_context['plugin'] );
 		}
 	} elseif ( 'theme' === $type ) {
-		if ( isset( $hook_extra['themes'] ) ) {
-			$keys = $hook_extra['themes'];
-		} elseif ( isset( $hook_extra['theme'] ) ) {
-			$keys = array( $hook_extra['theme'] );
+		if ( isset( $upgrade_context['themes'] ) ) {
+			$keys = $upgrade_context['themes'];
+		} elseif ( isset( $upgrade_context['theme'] ) ) {
+			$keys = array( $upgrade_context['theme'] );
 		}
 	}
 
 	foreach ( $keys as $key ) {
 		unset( $watchlist[ $key ] );
+		wp_clear_scheduled_hook( CRON_HOOK, array( $key ) );
 	}
 
 	if ( array() === $watchlist ) {
@@ -132,36 +111,31 @@ function record_update_complete( \WP_Upgrader $_upgrader, array $hook_extra ): v
 }
 
 /**
- * Detect updates stuck beyond the threshold and send a single alert email.
+ * Check whether a specific extension's update is still in-progress.
  *
- * Each entry is marked with reported_at once alerted so it is not re-reported
- * on subsequent cron runs.
+ * Fires via a one-off WP-Cron event scheduled at update start. If the entry
+ * still exists in the watchlist the update never completed — send an alert
+ * and clear the entry. If it's gone the update finished normally.
+ *
+ * @param string $key Extension key (plugin relative path or theme slug).
  */
-function check_for_stuck_updates(): void {
+function check_stuck_update( string $key ): void {
 	$watchlist = get_option( OPTION_KEY, array() );
 
+	if ( ! isset( $watchlist[ $key ] ) ) {
+		return;
+	}
+
+	$entry = $watchlist[ $key ];
+	unset( $watchlist[ $key ] );
+
 	if ( array() === $watchlist ) {
-		return;
+		delete_option( OPTION_KEY );
+	} else {
+		update_option( OPTION_KEY, $watchlist, false );
 	}
 
-	$threshold = STUCK_MINUTES * MINUTE_IN_SECONDS;
-	$now       = time();
-	$stuck     = array();
-
-	foreach ( $watchlist as $key => $entry ) {
-		$age = $now - $entry['started_at'];
-		if ( $age >= $threshold && ! isset( $entry['reported_at'] ) ) {
-			$stuck[ $key ]                    = array_merge( $entry, array( 'duration' => $age ) );
-			$watchlist[ $key ]['reported_at'] = $now;
-		}
-	}
-
-	if ( array() === $stuck ) {
-		return;
-	}
-
-	update_option( OPTION_KEY, $watchlist, false );
-	send_stuck_alert( $stuck );
+	send_stuck_alert( array( $key => $entry ) );
 }
 
 /**
@@ -189,7 +163,7 @@ function send_stuck_alert( array $stuck ): void {
 
 	$lines = array(
 		sprintf(
-			/* translators: 1: site name, 2: site URL */
+			/* translators: 1: plural suffix, 2: site name, 3: site URL */
 			__( 'The following update%1$s on %2$s (%3$s) appear to have stalled:', 'pie-custom-functions' ),
 			$count > 1 ? 's' : '',
 			$site_name,
@@ -207,7 +181,7 @@ function send_stuck_alert( array $stuck ): void {
 		$lines[] = '  ' . sprintf( __( 'Slug:     %s', 'pie-custom-functions' ), $key );
 		// translators: %s: timestamp of when the update started.
 		$lines[] = '  ' . sprintf( __( 'Started:  %s', 'pie-custom-functions' ), $started );
-		// translators: %s: human-readable duration of how long the update has been stuck.
+		// translators: %s: human-readable duration since the update began.
 		$lines[] = '  ' . sprintf( __( 'Duration: %s', 'pie-custom-functions' ), $duration );
 		$lines[] = '';
 	}
@@ -231,15 +205,15 @@ function send_stuck_alert( array $stuck ): void {
 	$lines[] = '';
 	$lines[] = __( '3. Clear the WordPress update lock', 'pie-custom-functions' );
 	$lines[] = __( '   If the update still shows as pending or unavailable, clear the update transients:', 'pie-custom-functions' );
-	$lines[] = __( '   - Via WP-CLI:   wp transient delete update_plugins && wp transient delete auto_updater.lock', 'pie-custom-functions' );
+	$lines[] = __( '   - Via WP-CLI:   wp transient delete --network update_plugins && wp transient delete --network auto_updater.lock', 'pie-custom-functions' );
 	$lines[] = __( '   - Via wp-admin: Dashboard > Updates > Check Again', 'pie-custom-functions' );
 	$lines[] = '';
 	$lines[] = __( '4. Dismiss this alert', 'pie-custom-functions' );
 	$lines[] = __( '   Once resolved, remove the stale watchdog entry so future alerts are not suppressed:', 'pie-custom-functions' );
 	$lines[] = __( '   - Via WP-CLI:   wp option delete pie_update_watchdog', 'pie-custom-functions' );
-	$lines[] = __( '   - Via database: delete the row with option_name = \'pie_update_watchdog\' from wp_options', 'pie-custom-functions' );
+	$lines[] = __( "   - Via database: delete the row with option_name = 'pie_update_watchdog' from wp_options", 'pie-custom-functions' );
 	$lines[] = '';
-	/* translators: %s: admin area URL */
+	// translators: %s: URL to the site's admin area.
 	$lines[] = sprintf( __( 'Admin area: %s', 'pie-custom-functions' ), admin_url() );
 
 	wp_mail( $to, $subject, implode( "\n", $lines ) );
