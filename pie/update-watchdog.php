@@ -11,6 +11,10 @@
 
 namespace PIE\UpdateWatchdog;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 const OPTION_KEY    = 'pie_update_watchdog';
 const STUCK_MINUTES = 15;
 const CRON_HOOK     = 'pie_update_watchdog_check';
