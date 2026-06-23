@@ -30,18 +30,17 @@ add_action( CRON_HOOK, __NAMESPACE__ . '\check_stuck_update' );
  * @return mixed Unchanged $response.
  */
 function record_update_start( mixed $response, array $upgrade_context ): mixed {
-	if ( ! isset( $upgrade_context['action'] ) || 'update' !== $upgrade_context['action'] ) {
-		return $response;
-	}
-
-	$type = $upgrade_context['type'] ?? '';
+	$type = '';
 	$key  = '';
 	$name = '';
 
-	if ( 'plugin' === $type && isset( $upgrade_context['plugin'] ) ) {
+	// upgrader_pre_install context never contains 'action' or 'type' — infer from present keys.
+	if ( isset( $upgrade_context['plugin'] ) ) {
+		$type = 'plugin';
 		$key  = $upgrade_context['plugin'];
 		$name = resolve_plugin_name( $key );
-	} elseif ( 'theme' === $type && isset( $upgrade_context['theme'] ) ) {
+	} elseif ( isset( $upgrade_context['theme'] ) ) {
+		$type = 'theme';
 		$key  = $upgrade_context['theme'];
 		$name = resolve_theme_name( $key );
 	}
@@ -60,7 +59,8 @@ function record_update_start( mixed $response, array $upgrade_context ): mixed {
 
 	// Clear any previously scheduled check for this key, then schedule a fresh one.
 	wp_clear_scheduled_hook( CRON_HOOK, array( $key ) );
-	wp_schedule_single_event( time() + STUCK_MINUTES * MINUTE_IN_SECONDS, CRON_HOOK, array( $key ) );
+	$fire_at = time() + STUCK_MINUTES * MINUTE_IN_SECONDS;
+	wp_schedule_single_event( $fire_at, CRON_HOOK, array( $key ) );
 
 	return $response;
 }
