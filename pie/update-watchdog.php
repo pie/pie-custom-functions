@@ -160,10 +160,10 @@ function send_stuck_alert( array $stuck ): void {
 	$subject = sprintf(
 		'[%s] %s',
 		$site_name,
-		1 === $count
-			? __( 'Stuck update detected', 'pie-custom-functions' )
-			/* translators: %d: number of stuck updates */
-			: sprintf( __( '%d stuck updates detected', 'pie-custom-functions' ), $count )
+		sprintf(
+			_n( '%d stuck update detected', '%d stuck updates detected', $count, 'pie-custom-functions' ),
+			$count
+		)
 	);
 
 	ob_start();
