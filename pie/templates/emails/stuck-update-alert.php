@@ -18,9 +18,15 @@ defined( 'ABSPATH' ) || exit;
 <p>
 <?php
 printf(
-	/* translators: 1: plural suffix, 2: site name, 3: site URL */
-	esc_html__( 'The following update%1$s on %2$s (%3$s) appear to have stalled:', 'pie-custom-functions' ),
-	$count > 1 ? 's' : '',
+	esc_html(
+		/* translators: 1: site name, 2: site URL */
+		_n(
+			'The following update on %1$s (%2$s) appears to have stalled:',
+			'The following updates on %1$s (%2$s) appear to have stalled:',
+			$count,
+			'pie-custom-functions'
+		)
+	),
 	esc_html( $site_name ),
 	esc_url( $site_url )
 );
