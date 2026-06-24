@@ -151,10 +151,11 @@ function check_stuck_update( string $key ): void {
  * @param array $stuck Map of extension key => watchlist entry data.
  */
 function send_stuck_alert( array $stuck ): void {
-	$site_name = get_bloginfo( 'name' );
-	$site_url  = get_site_url();
-	$to        = apply_filters( 'pie_update_watchdog_alert_email', get_option( 'admin_email' ) );
-	$count     = count( $stuck );
+	$site_name   = get_bloginfo( 'name' );
+	$site_url    = get_site_url();
+	$to          = apply_filters( 'pie_update_watchdog_alert_email', get_option( 'admin_email' ) );
+	$count       = count( $stuck );
+	$upgrade_dir = trailingslashit( WP_CONTENT_DIR ) . 'upgrade/';
 
 	$subject = sprintf(
 		'[%s] %s',
@@ -165,62 +166,11 @@ function send_stuck_alert( array $stuck ): void {
 			: sprintf( __( '%d stuck updates detected', 'pie-custom-functions' ), $count )
 	);
 
-	$lines = array(
-		sprintf(
-			/* translators: 1: plural suffix, 2: site name, 3: site URL */
-			__( 'The following update%1$s on %2$s (%3$s) appear to have stalled:', 'pie-custom-functions' ),
-			$count > 1 ? 's' : '',
-			$site_name,
-			$site_url
-		),
-		'',
-	);
+	ob_start();
+	include __DIR__ . '/templates/emails/stuck-update-alert.php';
+	$body = ob_get_clean();
 
-	foreach ( $stuck as $key => $entry ) {
-		$started  = wp_date( 'Y-m-d H:i:s T', $entry['started_at'] );
-		$duration = human_time_diff( $entry['started_at'] );
-
-		$lines[] = '  ' . sprintf( '%s (%s)', $entry['name'], ucfirst( $entry['type'] ) );
-		// translators: %s: plugin or theme slug.
-		$lines[] = '  ' . sprintf( __( 'Slug:     %s', 'pie-custom-functions' ), $key );
-		// translators: %s: timestamp of when the update started.
-		$lines[] = '  ' . sprintf( __( 'Started:  %s', 'pie-custom-functions' ), $started );
-		// translators: %s: human-readable duration since the update began.
-		$lines[] = '  ' . sprintf( __( 'Duration: %s', 'pie-custom-functions' ), $duration );
-		$lines[] = '';
-	}
-
-	$upgrade_dir = trailingslashit( WP_CONTENT_DIR ) . 'upgrade/';
-
-	$lines[] = __( '--- What likely happened ---', 'pie-custom-functions' );
-	$lines[] = __( 'The server may have crashed or timed out mid-update, leaving the extension in a partial or broken state.', 'pie-custom-functions' );
-	$lines[] = '';
-	$lines[] = __( '--- How to resolve ---', 'pie-custom-functions' );
-	$lines[] = '';
-	$lines[] = __( '1. Clear partial update files', 'pie-custom-functions' );
-	// translators: %s: path to the WordPress upgrade directory.
-	$lines[] = sprintf( __( '   Check %s for any leftover temp directories and delete them.', 'pie-custom-functions' ), $upgrade_dir );
-	$lines[] = __( '   These are safe to remove — WordPress recreates them as needed.', 'pie-custom-functions' );
-	$lines[] = '';
-	$lines[] = __( '2. Verify the extension directory', 'pie-custom-functions' );
-	$lines[] = __( '   If the plugin or theme directory is corrupted or missing files, reinstall it:', 'pie-custom-functions' );
-	$lines[] = __( '   - Via wp-admin: Plugins > Add New > upload a fresh copy', 'pie-custom-functions' );
-	$lines[] = __( '   - Via WP-CLI:   wp plugin install <slug> --force', 'pie-custom-functions' );
-	$lines[] = '';
-	$lines[] = __( '3. Clear the WordPress update lock', 'pie-custom-functions' );
-	$lines[] = __( '   If the update still shows as pending or unavailable, clear the update transients:', 'pie-custom-functions' );
-	$lines[] = __( '   - Via WP-CLI:   wp transient delete --network update_plugins && wp transient delete --network auto_updater.lock', 'pie-custom-functions' );
-	$lines[] = __( '   - Via wp-admin: Dashboard > Updates > Check Again', 'pie-custom-functions' );
-	$lines[] = '';
-	$lines[] = __( '4. Dismiss this alert', 'pie-custom-functions' );
-	$lines[] = __( '   Once resolved, remove the stale watchdog entry so future alerts are not suppressed:', 'pie-custom-functions' );
-	$lines[] = __( '   - Via WP-CLI:   wp option delete pie_update_watchdog', 'pie-custom-functions' );
-	$lines[] = __( "   - Via database: delete the row with option_name = 'pie_update_watchdog' from wp_options", 'pie-custom-functions' );
-	$lines[] = '';
-	// translators: %s: URL to the site's admin area.
-	$lines[] = sprintf( __( 'Admin area: %s', 'pie-custom-functions' ), admin_url() );
-
-	wp_mail( $to, $subject, implode( "\n", $lines ) );
+	wp_mail( $to, $subject, $body, array( 'Content-Type: text/html; charset=UTF-8' ) );
 }
 
 /**
