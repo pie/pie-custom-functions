@@ -1,5 +1,20 @@
 # PIE Hosting Companion
 
+## What it does
+
+A PIE-internal hosting companion that loads as a Must-Use plugin so it can't be accidentally deactivated by clients. Requires PHP 8.0+.
+
+- **PIE admin access** — Treats any user with an `@pie.co.de` email address (or `pie_admin_override` user meta) as a PIE admin, granting administrator capabilities.
+- **Plugin hiding** — Hides Ultimate Branding, WP Hummingbird, and this plugin itself from non-PIE admin users, while keeping them fully functional.
+- **WPMU DEV restriction** — Limits WPMU DEV suite access to PIE admin users via `WPMUDEV_LIMIT_TO_USER`.
+- **Branda restriction** — Restricts Ultimate Branding access to PIE admin users via its permissions filter.
+- **URL redirections** — Regex-based redirect system with capture group support, conditions (`always`, `not_logged_in`, `logged_in`, `not_admin`, or a custom callable), and standard HTTP status codes. Rules added via `PIE\Redirections\filters\redirect_rules`.
+- **CSP header management** — Settings > Pie Security Headers page (pie_admin only) for configuring a Content-Security-Policy header across frontend, admin, and login. Overridable via `PIE_CSP_HEADER` constant in `wp-config.php`.
+- **Staging detection** — Detects staging clones by comparing the live URL to a protected option (resilient to search-and-replace). On staging: disables CF7 spam checks and updates Multisite domain mappings for `*.staging.tempurl.host`.
+- **Auto-updates** — Deploys MU plugin files atomically on activation and after updates, sourcing releases from GitHub via `plugin-update-checker`.
+
+---
+
 ## Installation:
 
 1. Download the latest copy of pie-custom-functions.zip from https://github.com/pie/pie-custom-functions/releases
