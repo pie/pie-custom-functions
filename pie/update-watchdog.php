@@ -33,7 +33,7 @@ add_action( CRON_HOOK, __NAMESPACE__ . '\check_stuck_update' );
  * @param array          $upgrade_context Upgrader context containing the extension identifier (e.g., 'plugin' or 'theme').
  * @return bool|\WP_Error $response  Unchanged installation response.
  */
-function record_update_start( mixed $response, array $upgrade_context ): mixed {
+function record_update_start( bool|\WP_Error $response, array $upgrade_context ): mixed {
 	$type = '';
 	$key  = '';
 	$name = '';
