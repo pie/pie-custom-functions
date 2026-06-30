@@ -12,6 +12,7 @@ A PIE-internal hosting companion that loads as a Must-Use plugin so it can't be 
 - **CSP header management** — Settings > Pie Security Headers page (pie_admin only) for configuring a Content-Security-Policy header across frontend, admin, and login. Overridable via `PIE_CSP_HEADER` constant in `wp-config.php`.
 - **Staging detection** — Detects staging clones by comparing the live URL to a protected option (resilient to search-and-replace). On staging: disables CF7 spam checks and updates Multisite domain mappings for `*.staging.tempurl.host`.
 - **Auto-updates** — Deploys MU plugin files atomically on activation and after updates, sourcing releases from GitHub via `plugin-update-checker`.
+- **Update watchdog** — Tracks plugin/theme updates and sends an alert email if an update appears to stall mid-process.
 
 ---
 
