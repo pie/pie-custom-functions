@@ -53,7 +53,10 @@ function record_update_start( bool|\WP_Error $response, array $upgrade_context )
 		return $response;
 	}
 
-	$watchlist         = get_option( OPTION_KEY, array() );
+	$watchlist = get_option( OPTION_KEY, array() );
+	if ( ! is_array( $watchlist ) ) {
+		$watchlist = array();
+	}
 	$watchlist[ $key ] = array(
 		'type'       => $type,
 		'name'       => $name,
