@@ -70,8 +70,8 @@ printf(
 <h3><?php esc_html_e( '2. Verify the extension directory', 'pie-custom-functions' ); ?></h3>
 <p><?php esc_html_e( 'If the plugin or theme directory is corrupted or missing files, reinstall it:', 'pie-custom-functions' ); ?></p>
 <ul>
-	<li><?php esc_html_e( 'Via wp-admin: Plugins > Add New > upload a fresh copy', 'pie-custom-functions' ); ?></li>
-	<li><code>wp plugin install &lt;slug&gt; --force</code></li>
+	<li><?php esc_html_e( 'Via wp-admin: reinstall the plugin/theme from a fresh ZIP', 'pie-custom-functions' ); ?></li>
+	<li><code>wp plugin install &lt;slug&gt; --force</code> (plugins) / <code>wp theme install &lt;slug&gt; --force</code> (themes)</li>
 </ul>
 
 <h3><?php esc_html_e( '3. Clear the WordPress update lock', 'pie-custom-functions' ); ?></h3>
