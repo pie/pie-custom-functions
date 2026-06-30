@@ -83,6 +83,9 @@ function record_update_start( bool|\WP_Error $response, array $upgrade_context )
  */
 function record_update_complete( \WP_Upgrader $_upgrader, array $upgrade_context ): void {
 	$watchlist = get_option( OPTION_KEY, array() );
+	if ( ! is_array( $watchlist ) ) {
+		$watchlist = array();
+	}
 
 	if ( array() === $watchlist ) {
 		return;
