@@ -77,7 +77,7 @@ printf(
 <h3><?php esc_html_e( '3. Clear the WordPress update lock', 'pie-custom-functions' ); ?></h3>
 <p><?php esc_html_e( 'If the update still shows as pending or unavailable, clear the update transients:', 'pie-custom-functions' ); ?></p>
 <ul>
-	<li><code>wp transient delete --network update_plugins &amp;&amp; wp transient delete --network auto_updater.lock</code></li>
+	<li><code>wp transient delete update_plugins &amp;&amp; wp transient delete auto_updater.lock</code> (add <code>--network</code> on multisite)</li>
 	<li><?php esc_html_e( 'Via wp-admin: Dashboard > Updates > Check Again', 'pie-custom-functions' ); ?></li>
 </ul>
 
