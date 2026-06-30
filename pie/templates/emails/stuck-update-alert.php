@@ -37,7 +37,7 @@ printf(
 <table>
 	<tr><td><strong><?php echo esc_html( sprintf( '%s (%s)', $entry['name'], ucfirst( $entry['type'] ) ) ); ?></strong></td></tr>
 	<tr>
-		<td><?php esc_html_e( 'Slug:', 'pie-custom-functions' ); ?></td>
+		<td><?php esc_html_e( 'Identifier:', 'pie-custom-functions' ); ?></td>
 		<td><?php echo esc_html( $key ); ?></td>
 	</tr>
 	<tr>
