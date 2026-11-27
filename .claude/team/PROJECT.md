@@ -1,4 +1,4 @@
-# <Project name>
+# PIE Hosting Companion
 
 The project profile. Every role reads this first: it is what makes the shared team specific to
 this project. Keep it short and factual; the detail lives in `SYSTEM.md`, `API.md`,
@@ -6,24 +6,34 @@ this project. Keep it short and factual; the detail lives in `SYSTEM.md`, `API.m
 
 ## The project
 
-- **What it is:** <one sentence: the site, what it sells or does, who uses it>
-- **Client:** <name>. Approves: <who>. Releases: <who>.
-- **People:** <PIE developers>, <client developers>
-- **Known issues live in:** <Asana project name and URL>. Search it before investigating a bug.
-- **Kind:** <one of `product` (a plugin or theme PIE sells and supports) or `site` (a client's website)>
-- **Knowledge base:** `none` <or, for a product, the folder's path, e.g. `knowledge-base/`>
-- **Design guide:** `none` <or a path in the repo, a URL, or a design system artifact link>
-- **Budget:** standard <`standard`, or `lean`: Bob, Claudia and Tess's Opus work at medium effort
-  instead of high, for a project where a slip costs little. `/ada:begin` has the model table>
+- **What it is:** PIE's own hosting companion plugin. It deploys itself into `mu-plugins` on every
+  PIE-hosted client site so it can't be deactivated. It grants PIE staff admin rights, hides PIE's
+  tooling from clients, sends a CSP header, handles redirects, detects staging clones and alerts
+  on stalled updates.
+- **Client:** PIE (internal). Approves: not known yet. Releases: not known yet. A release is
+  merging into `main` with a `release:*` label.
+- **People:** Neil Pie, Joe Worthington, Neil Miller, Joey Gilham, Anna Werno (PIE). No client
+  developers.
+- **Known issues live in:** Internal Development Projects
+  (https://app.asana.com/1/100438094841948/project/1206474484537567). Search it before
+  investigating a bug.
+- **Kind:** `product`
+- **Knowledge base:** `knowledge-base/`
+- **Design guide:** `none`
+- **Budget:** standard
 
 ## Code and branches
 
-- **Code:** <e.g. `themes/<theme>/`, `plugins/`>
-- **Branch from:** `production`. **PR into:** `next-release`. **Test on:** merge into `review`.
-  (Change if this project differs from the PIE workflow.)
+- **Code:** `plugins/pie-custom-functions/`. `update.json` and `assets/` stay at the repo root:
+  GitHub Pages serves them from `main` to the update checker on client sites.
+- **Branch from:** `main`. **PR into:** `next-release`. **Release:** `next-release` into `main`
+  with a `release:major|minor|patch` label (`.github/workflows/release.yml`). There is no
+  `production` or `review` branch. *(unverified: the developer said work usually branches from
+  "production"; this repo has `main` in that role.)*
 - **Branch names:** `<type>/<slug>/<Asana task URL without https://>`
-- **Versioning:** <`semver at release` (used in more than one place: no version numbers until
-  next-release goes into main, P31) | `none` (a single-instance project)>
+- **Versioning:** `semver at release`. The release workflow bumps the version in `package.json`,
+  `update.json`, both plugin headers and `changelog.md` (`release.yml:63-68`). Never bump a
+  version by hand (P31).
 
 ## Brief approval
 
@@ -31,9 +41,8 @@ Whose briefs need approving before anything is built, and which amendments need 
 `ada-brief` reads the first two lines; keep the three lines as they are and change only the
 values.
 
-- **Approvers:** <`none` if no one outside PIE writes code here; otherwise the GitHub logins who
-  can approve, e.g. `@neilpie, @annawerno`>
-- **Trusted:** <`none`, or the GitHub logins who don't need approval but can't approve>
+- **Approvers:** none
+- **Trusted:** none
 - **Re-approval triggers:** none (the defaults in /ada:begin apply)
 
 Approvers never need approval. When Approvers is `none`, no brief needs approval. Otherwise
@@ -46,8 +55,8 @@ approving again.
 
 | Branch | Environment | Host / install |
 |---|---|---|
-| `production` | Production | <install> |
-| `review` | Review | <install> |
+| `main` | GitHub release, picked up by the update checker on every PIE-hosted site | `https://pie.github.io/pie-custom-functions/update.json` |
+| `next-release` | Integration branch; no install of its own | none |
 
 ## Fragile areas
 
@@ -55,56 +64,70 @@ The areas where a change needs the most care. Ada escalates changes here to the 
 reads their `SYSTEM.md` sections before touching them; Tess tests them as sequences of events, not
 single events.
 
-1. <area>: `SYSTEM.md`, <section>
-2. <area>: `SYSTEM.md`, <section>
+1. MU self-deploy and auto-update: `SYSTEM.md`, Fragile areas, "1. MU self-deploy"
+2. PIE admin capabilities: `SYSTEM.md`, Fragile areas, "2. PIE admin capabilities"
+3. CSP header: `SYSTEM.md`, Fragile areas, "3. CSP header"
+4. Staging detection: `SYSTEM.md`, Fragile areas, "4. Staging detection"
+5. Update watchdog: `SYSTEM.md`, Fragile areas, "5. Update watchdog"
 
 ## Review checks (Claudia's Must Fix list)
 
 Project-specific checks on top of the P rules, each pointing at its S rule:
 
-- <e.g. any date arithmetic that isn't `<the one helper>()` (S14)>
+- A file under `pie/` that is not loaded by the MU loader, or that depends on the normal plugin or
+  its Composer autoloader (S100).
+- A change to the deploy path that could leave `mu-plugins` half-updated, or that records the new
+  version before the copy succeeded (S101).
+- Any new way to become a PIE admin, or any change to `is_pie_admin()`, that isn't called out in
+  the PR (S102).
+- Code that runs at MU load (top level of `pie-custom-functions-mu.php` or a `pie/` file) doing a
+  query or a write that could run on a hook instead (S103).
 
 ## Tests
 
 - **Unit tests:** `tools/vendor/bin/phpunit` (`tests/README.md`).
 - **PressTest tests:** `tests/presstest/`, run with `presstest run` (`tests/README.md`).
-- **PressTest image:** <`1.0.0`, the version of the runner image, ghcr.io/pie/presstest-runner,
-  the tests are pinned to, or "none">. `presstest run` reads the first `code` span here (or the
+- **PressTest image:** `1.0.0`. `presstest run` reads the first `code` span here (or the
   first word), so keep the version first. Moved up with each new image, and the tests run again.
-- **PressTest shared suites:** <`wordpress-core`, `woocommerce-core`: the suites in the image that
-  run with the project's tests, or "none">. Every `code` span here is read.
-- **PressTest staging:** <`https://staging.example.com`, the staging site `presstest run --env
-  staging` tests, or "none" (e.g. Cloudflare's bot challenge blocks PressTest there)>. Never
-  production: the suites place orders.
-- **Clock-sensitive behaviour:** <yes/no; if yes, the positions to test, e.g. Friday after noon,
-  Sunday>. If yes, the local site's clock is moved with `ada-clock` (`TEST-AREAS.md`, Dates and
-  the clock).
+- **PressTest shared suites:** `wordpress-core`
+- **PressTest staging:** none
+- **Clock-sensitive behaviour:** no. The only time logic is the watchdog's 15-minute single
+  cron event (`SYSTEM.md`, Fragile areas, "5. Update watchdog").
 
 ## Production access (for `/ada:bughunt`)
 
 Read-only, through `prod-wp`. Never write. Its settings (SSH, table prefix, logs path, never-query
 list) are in `.claude/team/prod.env`; `prod-wp config` shows them.
 
-- **Never construct on production:** <classes whose constructors write, if any, and why>
-- **Inspectors:** `tools/bughunt/*.php`, each marked `READ-ONLY`. <List them.>
+There is no production access set up: the plugin runs on many client sites, not one, so
+`prod-wp` says so. Investigate a client site's problem through that site's own access.
+
+- **Never construct on production:** none (the plugin has no classes).
+- **Inspectors:** none yet.
 
 ## Local copies
 
-<How a local copy is made and made safe, e.g. pulled from production; Stripe in test mode;
-emails disabled. Say what a check should verify.>
+Not known yet how a local copy is made safe. The local site (`pie-hosting-companion` in Local)
+has the Disable Emails and User Switching plugins installed *(unverified: whether they are
+active)*.
 
-- **The local site runs the code in:** <the checkout its theme or plugin folder links to, e.g.
-  `~/Repos/<repo>`>. Testing on the local site means testing whatever that checkout has checked
-  out, so a branch switched there changes the site for everyone using it. To test a worktree,
-  repoint the link at it (`ln -sfn <worktree>/<code dir> <site>/wp-content/themes/<theme>`) and
-  point it back afterwards.
-- **Running WP-CLI on the local site:** <how: e.g. Local's "Open site shell", or the command line
-  with Local's PHP and MySQL socket>. Each developer's own paths go in `.claude/team/local.env`
-  (git-ignored), never in this file.
+- **The local site runs the code in:** this checkout, cloned into the site's `app/public/` and
+  symlinked: `wp-content/plugins/pie-custom-functions` →
+  `../../pie-custom-functions/plugins/pie-custom-functions`, and
+  `wp-content/mu-plugins/pie-custom-functions-mu.php` → the plugin's MU file. The MU loader
+  includes `pie/` relative to its resolved path, so edits are live without a redeploy
+  (`SYSTEM.md`, Known gotchas). Testing on the local site means testing whatever this checkout has
+  checked out, so a branch switched here changes the site for everyone using it. To test a
+  worktree, repoint both links at it and point them back afterwards.
+- **Running WP-CLI on the local site:** Local's "Open site shell", or `wp --path=<the site's
+  app/public>` with Local's PHP and MySQL socket. Each developer's own paths go in
+  `.claude/team/local.env` (git-ignored), never in this file.
 - **The local site's URL:** `LOCAL_URL` in `.claude/team/local.env`, set by each developer. It is
   the only host Tess opens in Chrome, and the only site `presstest run` tests. The developer logs in to its admin before Tess checks
   anything in the browser. Tess sees a customer's view through the User Switching plugin's
   "Switch To", so the local site needs User Switching active; without it those checks stay manual.
+  Checking non-PIE-admin behaviour needs a user whose email isn't `@pie.co.de` and who has no
+  `pie_admin_override` meta.
 - **Running the PressTest tests locally:** `presstest run` (`presstest config` shows the settings
   in use). Each developer adds to `.claude/team/local.env`: `PRESSTEST_SECRET` (the site's report
   token, Presstest > Settings, with "Allow Presstest to create test data" on), and
@@ -115,7 +138,7 @@ emails disabled. Say what a check should verify.>
   ghcr.io once, as the "PressTest tests" section of the ada README says
   (https://github.com/pie/ada-and-friends#presstest-tests), which also says how to read the
   report token.
-  <Which tests need the customer, if any.>
+  No test needs a customer yet.
 - **Also checked before anything runs on the local site:** the background runners (Action
   Scheduler, WP-Cron) are frozen; the time WordPress reports from a web request is the intended
   time; nothing from an earlier run is left over (`.claude/handoff/CHECKPOINT.md`).
