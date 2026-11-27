@@ -16,6 +16,25 @@ A PIE-internal hosting companion that loads as a Must-Use plugin so it can't be 
 
 ---
 
+## Layout
+
+| Path | What |
+|---|---|
+| `plugins/pie-custom-functions/` | The plugin, exactly as shipped. Only this folder goes into the release zip. |
+| `update.json`, `assets/` | Served from `main` by GitHub Pages to the update checker on client sites. They must stay at the repo root. |
+| `.github/` | The release workflow and coding instructions. |
+
+## Local setup
+
+Clone the repo into the site's webroot, install the plugin's Composer dependencies, and symlink the plugin into `wp-content/plugins`:
+
+```
+cd app/public
+git clone git@github.com:pie/pie-custom-functions.git
+composer install -d pie-custom-functions/plugins/pie-custom-functions
+ln -s ../../pie-custom-functions/plugins/pie-custom-functions wp-content/plugins/pie-custom-functions
+```
+
 ## Installation:
 
 1. Download the latest copy of pie-custom-functions.zip from https://github.com/pie/pie-custom-functions/releases
@@ -36,6 +55,6 @@ In order to deploy an update:
     * `release:minor`
     * `release:patch`
 1. When merged, the `release.yml` workflow will update all of your version numbers and commit them back into main and create a github release with an extra artifact:
-    1. `plugin-slug.zip` - the uploadable plugin for manual installation
+    1. `plugin-slug.zip` - the uploadable plugin for manual installation, built from `plugins/pie-custom-functions/` only
 2. Updates should then show in wp-admin for any users of the plugin
 
