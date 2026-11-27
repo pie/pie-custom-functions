@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!-- Unit tests. Run from the repo root: tools/vendor/bin/phpunit -->
+<phpunit
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="tools/vendor/phpunit/phpunit/phpunit.xsd"
+	bootstrap="tests/unit/bootstrap.php"
+	cacheDirectory=".phpunit.cache"
+	colors="true"
+	failOnRisky="true"
+	failOnWarning="true"
+	beStrictAboutOutputDuringTests="true"
+>
+	<testsuites>
+		<testsuite name="unit">
+			<directory suffix="Test.php">tests/unit</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>

@@ -1,0 +1,19 @@
+{
+    "name": "pie/project-tools",
+    "description": "Developer tooling for this repo: PHPCS, PHPUnit and Brain Monkey. Kept out of the deployable code; install with: composer install -d tools",
+    "type": "project",
+    "license": "proprietary",
+    "require-dev": {
+        "brain/monkey": "^2.6",
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpunit/phpunit": "^11.5",
+        "wp-coding-standards/wpcs": "^3.2"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
+    }
+}
