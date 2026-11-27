@@ -28,8 +28,7 @@ this project. Keep it short and factual; the detail lives in `SYSTEM.md`, `API.m
   GitHub Pages serves them from `main` to the update checker on client sites.
 - **Branch from:** `main`. **PR into:** `next-release`. **Release:** `next-release` into `main`
   with a `release:major|minor|patch` label (`.github/workflows/release.yml`). There is no
-  `production` or `review` branch. *(unverified: the developer said work usually branches from
-  "production"; this repo has `main` in that role.)*
+  `production` or `review` branch.
 - **Branch names:** `<type>/<slug>/<Asana task URL without https://>`
 - **Versioning:** `semver at release`. The release workflow bumps the version in `package.json`,
   `update.json`, both plugin headers and `changelog.md` (`release.yml:63-68`). Never bump a
@@ -107,16 +106,15 @@ There is no production access set up: the plugin runs on many client sites, not 
 
 ## Local copies
 
-Not known yet how a local copy is made safe. The local site (`pie-hosting-companion` in Local)
-has the Disable Emails and User Switching plugins installed *(unverified: whether they are
-active)*.
+Not known yet how a local copy is made safe beyond this: the local site (`pie-hosting-companion`
+in Local, `http://pie-hosting-companion.local`) has Disable Emails and User Switching active.
 
 - **The local site runs the code in:** this checkout, cloned into the site's `app/public/` and
   symlinked: `wp-content/plugins/pie-custom-functions` →
-  `../../pie-custom-functions/plugins/pie-custom-functions`, and
-  `wp-content/mu-plugins/pie-custom-functions-mu.php` → the plugin's MU file. The MU loader
-  includes `pie/` relative to its resolved path, so edits are live without a redeploy
-  (`SYSTEM.md`, Known gotchas). Testing on the local site means testing whatever this checkout has
+  `../../pie-custom-functions/plugins/pie-custom-functions`. The features run from
+  `wp-content/mu-plugins/`, which is a deployed copy unless the MU file there is a symlink to the
+  plugin's. So an edit under `pie/` may not be live (`SYSTEM.md`, Known gotchas, "Locally, edits
+  under `pie/` may not be live"). Testing on the local site means testing whatever this checkout has
   checked out, so a branch switched here changes the site for everyone using it. To test a
   worktree, repoint both links at it and point them back afterwards.
 - **Running WP-CLI on the local site:** Local's "Open site shell", or `wp --path=<the site's

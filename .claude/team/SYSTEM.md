@@ -86,9 +86,13 @@ How it works (`pie_custom_functions_init`, main:68-139):
 
 Traps:
 
-- `update_check` runs on every request (main:286-298). A deploy that keeps failing is retried on
-  every request *(unverified: cost in practice)*.
-- Concurrent requests could race on `pie-new` / `pie-old` *(unverified)*.
+- `update_check` runs on every request (main:30, 295-296). Every failure path returns before
+  the version is recorded (main:95-105, 121, 134, 138), so a deploy that keeps failing is retried
+  in full on every request.
+- There's no lock. Two concurrent requests can both deploy: one can delete `pie-new` while the
+  other is copying into it (main:203-205), giving a false failure, a retry, and possibly the
+  `CRITICAL` log (main:226). Not reproduced. Even a single deploy has a moment between main:218
+  and main:223 when `mu-plugins/pie/` doesn't exist.
 - `vendor/autoload.php` is required unconditionally (main:43). A release zip without `vendor/` is
   fatal. `.zipignore` only excludes `composer.*` and `*.log`, so vendor ships.
 - There's no deactivation or uninstall hook. The MU files and options stay after the plugin is
@@ -106,7 +110,10 @@ recorded and the old copy still loads.
 ### 2. PIE admin capabilities
 
 - `is_pie_admin_email()` is `str_ends_with( $email, '@pie.co.de' )` (MU:109). It is
-  case-sensitive *(unverified in practice)*.
+  case-sensitive, and WordPress doesn't lowercase emails on save (`sanitize_email()` keeps
+  `x@PIE.CO.DE` as it is), so a mixed-case PIE address isn't a PIE admin. The WPMU DEV
+  `get_users()` search (MU:147) is a case-insensitive SQL `LIKE`, so that same address *is* given
+  WPMU DEV access: the two checks disagree.
 - `is_pie_admin()` is true for that email or for `pie_admin_override` meta, then filtered
   (MU:124-136).
 - `grant_pie_admin_caps` copies every cap from the `administrator` role into `allcaps` on
@@ -116,10 +123,16 @@ recorded and the old copy still loads.
   (adm:17-27). Saving checks the nonce `pie_admin_override_{id}`, a PIE-email current user and
   `edit_user` (adm:41-65).
 - `WPMU DEV` access goes to `@pie.co.de` users only. Override-meta users aren't included
-  (MU:147-156). The `define()` is unguarded, so a definition in `wp-config.php` would warn
-  *(unverified)*. On multisite, `get_users` is scoped to the current site *(unverified)*.
-- Anyone who can set their email to an `@pie.co.de` address becomes an administrator, so the
-  security of this rests on email changes being verified *(unverified)*.
+  (MU:147-156). The `define()` is unguarded: if `wp-config.php` already defines
+  `WPMUDEV_LIMIT_TO_USER`, PHP 8 gives a warning ("Constant already defined") and carries on with
+  the wp-config value. On multisite, `get_users()` is scoped to the current site
+  (`WP_User_Query` defaults `blog_id`, class-wp-user-query.php:94), so a super-admin with no role
+  on that site is left out (code only; not tested on a multisite).
+- Anyone whose email becomes an `@pie.co.de` address becomes an administrator. A user changing
+  their own email must confirm it from the new address first (core
+  `send_confirmation_on_profile_email`). An administrator editing another user's email, WP-CLI,
+  `wp_update_user()` and `wp_insert_user()` skip that confirmation, so any administrator can make
+  any user a PIE admin.
 
 To test: a PIE-email user, an override user and a plain user, each on a capability check, the
 plugins screen and the WPMU DEV dashboard.
@@ -136,7 +149,15 @@ plugins screen and the WPMU DEV dashboard.
 - There is no syntax check. A bad policy can break wp-admin; the constant is the way back in.
 - The form shows the option, not the constant, when the constant is set (a notice says it's
   active).
-- REST and `admin-post.php` responses may not get the header *(unverified)*.
+- REST responses get no CSP header: `rest_api_loaded` runs on `parse_request` and exits before
+  `wp_headers` fires (checked with curl on `/wp-json/`).
+- **In wp-admin, core replaces the header.** Core's `send_frame_options_header` also runs on
+  `admin_init` at priority 10, after this plugin's MU callback, and its `header()` call replaces
+  ours: `admin-post.php` was seen sending `Content-Security-Policy: frame-ancestors 'self';`
+  instead of the configured policy. The same hook order applies to every wp-admin page (from the
+  code; only `admin-post.php` was checked). `wp-login.php` sends the configured policy.
+- The front end may be page-cached, so a `HEAD` request can show an old response without the
+  header; check with a cache-busting query string.
 
 To test: an empty value sends no header; a value sends exactly that header on the front end,
 admin and login; the constant wins; a non-PIE admin can't see or save the page.
@@ -158,7 +179,8 @@ Traps:
 - A real `siteurl` change on a live site (http to https, a new domain) looks like staging.
 - A site whose first load is already a clone stores the clone's URL as live.
 - `$_SERVER['HTTP_HOST']` is read without `isset` or sanitising (MU:195).
-- `get_sites()` returns 100 sites by default *(unverified)*.
+- `get_sites()` is called with no arguments (MU:214) and `WP_Site_Query` returns 100 sites by
+  default, so a network with more than 100 sites is only partly mapped.
 - Local copies aren't detected as staging unless their `siteurl` differs from the stored one.
   The Asana card "Set up staging and local sites safely by default" is about this area.
 
@@ -179,8 +201,13 @@ site; a multisite on a `staging.tempurl.host` host.
 Traps:
 
 - It relies on WP-Cron: no alert if cron never runs.
-- An update that takes more than 15 minutes raises a false alert. An upgrade that fails without
-  reaching `upgrader_process_complete` raises one too *(unverified)*.
+- An update that takes more than 15 minutes raises a false alert.
+- An upgrade that fails with an error doesn't: `upgrader_pre_install` fires inside
+  `install_package` (class-wp-upgrader.php:556), and `run()` still fires
+  `upgrader_process_complete` after a returned error (:988; bulk upgrades always, from
+  class-plugin-upgrader.php:413). Failures before the install (download, unpack) never start the
+  watchdog. The alert fires only when the request dies between the two: a fatal error, a timeout
+  or an `exit`. That's what the watchdog is for.
 - Core updates aren't tracked.
 - The entry is deleted when the alert fires, yet the email asks the reader to delete it "so
   future alerts are not suppressed" (template:85).
@@ -213,11 +240,13 @@ hand (one alert, entry gone); bulk updates.
 
 ## Known gotchas
 
-- **Locally, edits are live.** The local MU file is a symlink to the plugin's, and the loader
-  includes `pie/` through `plugin_dir_path( __FILE__ )`, which follows the link (MU:42-47). On a
-  client site the MU copy only changes on a deploy. If the local
-  `pie_custom_functions_version` falls behind the header, `update_check` deploys and `rename()`s a
-  real file over the symlink *(unverified)*.
+- **Locally, edits under `pie/` may not be live.** The loader includes `pie/` relative to its
+  own path (MU:42-47). If `mu-plugins/pie-custom-functions-mu.php` is a symlink to the plugin's
+  file, it loads the checkout's `pie/` and edits are live. A deploy (whenever the stored
+  `pie_custom_functions_version` is below the header) copies `pie/` into `mu-plugins/` and
+  `rename()`s a real file over the symlink, replacing the link. From then on the site runs the
+  copy in `mu-plugins/`, and edits in the checkout don't show until the next deploy. Before
+  testing a change locally, check with `ls -l wp-content/mu-plugins/`.
 - **Redirect capture groups don't work.** The docblock advertises `$1` (redir:28), but the
   destination is used as it is (redir:298-302).
 - **Off-site redirects become the home page.** `wp_validate_redirect( ..., home_url() )` rewrites
