@@ -10,7 +10,7 @@ this project. Keep it short and factual; the detail lives in `SYSTEM.md`, `API.m
   PIE-hosted client site so it can't be deactivated. It grants PIE staff admin rights, hides PIE's
   tooling from clients, sends a CSP header, handles redirects, detects staging clones and alerts
   on stalled updates.
-- **Client:** PIE (internal). Approves: not known yet. Releases: not known yet. A release is
+- **Client:** PIE (internal). Approves: PIE. Releases: PIE. A release is
   merging into `main` with a `release:*` label.
 - **People:** Neil Pie, Joe Worthington, Neil Miller, Joey Gilham, Anna Werno (PIE). No client
   developers.
@@ -106,8 +106,11 @@ There is no production access set up: the plugin runs on many client sites, not 
 
 ## Local copies
 
-Not known yet how a local copy is made safe beyond this: the local site (`pie-hosting-companion`
-in Local, `http://pie-hosting-companion.local`) has Disable Emails and User Switching active.
+A local copy is a WordPress install (here `pie-hosting-companion` in Local,
+`http://pie-hosting-companion.local`) with this checkout linked in. It is made safe by the Disable
+Emails plugin, so nothing is sent (including watchdog alerts), and it has User Switching active for
+checking non-PIE-admin views. A check verifies both are active (`wp plugin list --status=active`)
+before anything runs.
 
 - **The local site runs the code in:** this checkout, cloned into the site's `app/public/` and
   symlinked: `wp-content/plugins/pie-custom-functions` →

@@ -223,8 +223,8 @@ hand (one alert, entry gone); bulk updates.
   pick it up through `update.json` on GitHub Pages.
 - Flags: `PIE_CSP_HEADER`. `WP_DEBUG` and `WP_DEBUG_LOG` turn on redirect debug logging
   (redir:93, 331).
-- Local copies: the symlinked checkout described in `PROJECT.md`, Local copies. How they're made
-  safe is not known yet.
+- Local copies: the symlinked checkout described in `PROJECT.md`, Local copies. Disable Emails and
+  User Switching are active on them.
 
 ## Other areas
 
