@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<ruleset name="PIE Hosting Companion">
+	<description>WordPress coding standards for PIE Hosting Companion. Run on changed files; older files are not clean and are not expected to be.</description>
+
+	<arg name="extensions" value="php"/>
+	<arg name="basepath" value="."/>
+	<arg name="parallel" value="8"/>
+	<arg name="colors"/>
+	<arg value="sp"/>
+
+	<file>themes</file>
+	<file>plugins</file>
+
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/tools/*</exclude-pattern>
+
+	<config name="minimum_wp_version" value="6.0"/>
+	<config name="testVersion" value="8.0-"/>
+
+	<rule ref="WordPress">
+		<!-- Remove this exclusion if the project names class files class-*.php, as WPCS expects. -->
+		<exclude name="WordPress.Files.FileName"/>
+		<!-- Keep this exclusion only if the project's prefixes are too short for WPCS (under four
+		     characters) and new code is namespaced; otherwise list the prefixes below instead. -->
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals"/>
+	</rule>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="pie-custom-functions"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Unit tests: a test method's name says what it checks, so it needs no docblock. -->
+	<rule ref="Squiz.Commenting.FunctionComment.Missing">
+		<exclude-pattern>tests/unit/*</exclude-pattern>
+	</rule>
+	<rule ref="Squiz.Commenting.FileComment.Missing">
+		<exclude-pattern>tests/unit/bootstrap.php</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.CodeAnalysis.AssignmentInTernaryCondition">
+		<exclude-pattern>tests/unit/*</exclude-pattern>
+	</rule>
+
+	<rule ref="PHPCompatibilityWP"/>
+</ruleset>

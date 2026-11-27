@@ -6,3 +6,10 @@ package-lock.json
 DOCKER_ENV
 docker_tag
 *.log
+.claude/handoff/
+.claude/worktrees/
+.claude/settings.local.json
+.claude/team/local.env
+.claude/presstest/
+.phpunit.cache/
+tools/vendor/

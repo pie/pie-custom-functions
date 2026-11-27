@@ -1,0 +1,79 @@
+{
+  "extraKnownMarketplaces": {
+    "pie": {
+      "source": {
+        "source": "github",
+        "repo": "pie/ada-and-friends"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "ada@pie": true
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "promptCacheTtl": "1h",
+  "permissions": {
+    "allow": [
+      "Bash(ada-handoff-init*)",
+      "Bash(ada-onboard refresh)",
+      "Bash(prod-wp *)",
+      "Bash(presstest *)",
+      "Bash(ada-brief *)",
+      "Bash(ada-plan *)",
+      "Bash(ada-size *)",
+      "Bash(ada-worktree check)",
+      "Bash(ada-worktree list)",
+      "Bash(ada-worktree main)",
+      "Bash(ada-clock status)",
+      "Bash(ada-clock set *)",
+      "Bash(ada-clock reset)",
+      "Bash(php -l *)",
+      "Bash(tools/vendor/bin/phpcs *)",
+      "Bash(tools/vendor/bin/phpunit*)",
+      "Bash(composer install -d tools*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git merge-base *)",
+      "Bash(git branch)",
+      "Bash(git branch --show-current)",
+      "Bash(git branch -a)",
+      "Bash(git branch -r)",
+      "Bash(git branch -vv)",
+      "Bash(git branch -avv)",
+      "Bash(git branch --list*)",
+      "Bash(git branch --contains *)",
+      "Bash(git branch --merged*)",
+      "Bash(git branch --no-merged*)",
+      "Bash(git reflog)",
+      "Bash(git reflog -*)",
+      "Bash(git reflog show*)",
+      "Bash(git show *)",
+      "Bash(git rev-parse *)",
+      "Bash(git worktree list*)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(ls *)",
+      "Bash(wc *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(cat *)",
+      "Bash(which *)",
+      "Bash(gh pr view*)",
+      "Bash(gh api user)",
+      "Bash(gh api user -q .login)",
+      "Bash(gh api user --jq .login)",
+      "Edit(/.claude/handoff/**)",
+      "Edit(/tests/**)"
+    ],
+    "deny": [
+      "Bash(git push origin production*)",
+      "Bash(git push origin next-release*)",
+      "Bash(git push origin main*)",
+      "Bash(git push --force*)"
+    ]
+  }
+}
